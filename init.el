@@ -19,14 +19,15 @@
 (use-package straight
   :custom (straight-use-package-by-default t))
 
+;; load my path
+(use-package exec-path-from-shell
+  :demand
+  :config (exec-path-from-shell-initialize))
+
 ;; base Emacs config
 (use-package emacs
   :config
   (global-display-line-numbers-mode 1)
-  ;; load my path
-  (use-package exec-path-from-shell
-    :demand
-    :config (exec-path-from-shell-initialize))
   :custom
   (confirm-kill-emacs 'y-or-n-p)
   (desktop-base-file-name "desktop")
@@ -104,15 +105,16 @@
   (setq magit-display-buffer-function 'magit-display-buffer-same-window-except-diff-v1)
   (setq magit-save-repository-buffers 'dontask)
   (setq magit-section-initial-visibility-alist '((stashes . hide) (unpushed . show)))
-  :bind (("C-c g" . magit-file-dispatch)
-         :map global-map
-              :prefix-map magit-super-map
-              :prefix "s-m"
-              ("m" . magit-status)
-              ("j" . magit-dispatch)
-              ("k" . magit-file-dispatch)
-              ("l" . magit-log-buffer-file)
-              ("b" . magit-blame)))
+  :bind
+  (("C-c g" . magit-file-dispatch)
+   :map global-map
+   :prefix-map magit-super-map
+   :prefix "s-m"
+   ("m" . magit-status)
+   ("j" . magit-dispatch)
+   ("k" . magit-file-dispatch)
+   ("l" . magit-log-buffer-file)
+   ("b" . magit-blame)))
 
 (use-package smartparens
   :config
@@ -122,5 +124,4 @@
   (setq sp-autoskip-closing-pair 'always)
   (setq sp-hybrid-kill-entire-symbol nil)
   (sp-use-paredit-bindings)
-
   (show-smartparens-global-mode +1))
