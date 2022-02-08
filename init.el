@@ -98,7 +98,12 @@
   :bind ("C-." . imenu-anywhere))
 
 (use-package magit
-  :config (setq magit-define-global-key-bindings t)
+  :config
+  (setq magit-define-global-key-bindings t)
+  (setq magit-bury-buffer-function 'magit-mode-quit-window)
+  (setq magit-display-buffer-function 'magit-display-buffer-same-window-except-diff-v1)
+  (setq magit-save-repository-buffers 'dontask)
+  (setq magit-section-initial-visibility-alist '((stashes . hide) (unpushed . show)))
   :bind (("C-c g" . magit-file-dispatch)
          :map global-map
               :prefix-map magit-super-map
