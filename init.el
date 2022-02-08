@@ -97,6 +97,18 @@
 (use-package imenu-anywhere
   :bind ("C-." . imenu-anywhere))
 
+(use-package magit
+  :config (setq magit-define-global-key-bindings t)
+  :bind (("C-c g" . magit-file-dispatch)
+         :map global-map
+              :prefix-map magit-super-map
+              :prefix "s-m"
+              ("m" . magit-status)
+              ("j" . magit-dispatch)
+              ("k" . magit-file-dispatch)
+              ("l" . magit-log-buffer-file)
+              ("b" . magit-blame)))
+
 (use-package smartparens
   :config
   (require 'smartparens-config)
