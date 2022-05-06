@@ -28,14 +28,91 @@
 (use-package emacs
   :config
   (global-display-line-numbers-mode 1)
-  :custom
-  (confirm-kill-emacs 'y-or-n-p)
-  (desktop-base-file-name "desktop")
-  (desktop-base-lock-name "desktop.lock")
-  (desktop-path (add-to-list desktop-path prelude-savefile-dir))
-  (desktop-dirname prelude-savefile-dir)
-  (desktop-save-mode t))
+  (blink-cursor-mode -1)
+  ;; toolbar isn't on in TTY
+  (tool-bar-mode -1)
+  ;; Don't use messages that you don't read
+  (setq initial-scratch-message "")
+  ;; Get back that column
+  (scroll-bar-mode -1)
+  ;; y or n instead of typing
+  (fset 'yes-or-no-p 'y-or-n-p)
+  ;; flash the modeline instead of bell (not sure I need this)
+  (setq ring-bell-function
+        (lambda ()
+          (let ((orig-fg (face-foreground 'mode-line)))
+            (set-face-foreground 'mode-line "#F2804F")
+            (run-with-idle-timer 0.1 nil
+                                 (lambda (fg) (set-face-foreground 'mode-line fg))
+                                 orig-fg))))
+  ;; nice scrolling
+  (setq scroll-margin 0
+        scroll-conservatively 100000
+        scroll-preserve-screen-position 1)
+  ;; more useful frame title, that show either a file or a
+  ;; buffer name (if the buffer isn't visiting a file)
+  (setq frame-title-format
+        '("" (:eval (if (buffer-file-name)
+                        (abbreviate-file-name (buffer-file-name))
+                      "%b"))))
+  ;; confirm exit because fat fingers
+  (setq confirm-kill-emacs 'y-or-n-p)
+  ;; desktop saving
+  (defvar savefile-dir (expand-file-name "savefile" user-emacs-directory) "Where we save emacs's state containing files")
+  (unless (file-exists-p savefile-dir)
+    (make-directory savefile-dir t))
+  (setq desktop-base-file-name "desktop")
+  (setq desktop-base-lock-name "desktop.lock")
+  (setq desktop-path (list savefile-dir))
+  (setq desktop-dirname savefile-dir)
+  (setq desktop-restore-eager 6)
+  (desktop-save-mode t)
+  ;; store all backup and autosave files in the tmp dir
+  (setq backup-directory-alist
+        `((".*" . ,temporary-file-directory)))
+  (setq auto-save-file-name-transforms
+        `((".*" ,temporary-file-directory t)))
+  ;; revert buffers automatically when underlying files are changed externally
+  (global-auto-revert-mode t)
+  ;; uniquify buffer names better
+  (setq uniquify-buffer-name-style 'forward)
+  (setq uniquify-separator "/")
+  (setq uniquify-after-kill-buffer-p t)    ; rename after killing uniquified
+  (setq uniquify-ignore-buffers-re "^\\*") ; don't muck with special buffers
+  ;; saveplace remembers your location in a file when saving files
+  (setq save-place-file (expand-file-name "saveplace" savefile-dir))
+  (save-place-mode 1)
+  ;; savehist keeps track of some history
+  (setq savehist-additional-variables
+        ;; search entries
+        '(search-ring regexp-search-ring)
+        ;; save every minute
+        savehist-autosave-interval 60
+        ;; keep the home clean
+        savehist-file (expand-file-name "savehist" savefile-dir))
+  (savehist-mode +1)
 
+  ;; Editorish things
+  (setq-default indent-tabs-mode nil) ;; don't use tabs to indent
+  (setq-default tab-width 8) ;; but maintain correct appearance
+  (setq require-final-newline t) ;; Newline at end of file
+  (delete-selection-mode t) ;; delete the selection with a keypress
+  ;; hippie-expand some things
+  (setq hippie-expand-try-functions-list '(try-expand-dabbrev
+                                           try-expand-dabbrev-all-buffers
+                                           try-expand-dabbrev-from-kill
+                                           try-complete-file-name-partially
+                                           try-complete-file-name
+                                           try-expand-all-abbrevs
+                                           try-expand-list
+                                           try-expand-line
+                                           try-complete-lisp-symbol-partially
+                                           try-complete-lisp-symbol))
+  (setq tab-always-indent 'complete) ;; works with hippie-expand to complete if already indented. QUESTIONABLE
+  (setq blink-matching-paren nil) ;; disable annoying blink-matching-paren
+
+  )
+;; end base emacs
 
 ;; MacOS specific settings
 (use-package emacs
@@ -57,6 +134,18 @@
   :config (set-fontset-font t 'unicode "Apple Color Emoji" nil 'prepend)
   )
 ;; end MacOS
+
+;; love me some zenburn theme
+(use-package zenburn-theme
+  :config
+  (load-theme 'zenburn t))
+
+;; show all of the completions from the keys entered so far
+(use-package which-key
+  :config
+  (which-key-mode))
+
+;;; EDITORish things vvv
 
 ;; Useful functions from bbatsov
 ;; https://github.com/bbatsov/crux
@@ -82,6 +171,7 @@
          ("C-c TAB" . crux-indent-rigidly-and-copy-to-clipboard)
          ("C-c I" . crux-find-user-init-file)
          ("C-c S" . crux-find-shell-init-file)
+         ("C-^" . crux-top-join-line)
          ("s-r" . crux-recentf-find-file)
          ("s-j" . crux-top-join-line)
          ("s-k" . crux-kill-whole-line)
@@ -93,10 +183,39 @@
   :bind (([C-S-up] . move-text-up)
          ([C-S-down] . move-text-down)))
 
+(use-package ivy :ensure t
+  ;; :diminish (ivy-mode . "")             ; does not display ivy in the modeline
+  :init
+  (ivy-mode 1)                          ; enable ivy globally at startup
+  :config
+  (setq ivy-use-virtual-buffers t)       ; extend searching to bookmarks and
+  (setq ivy-height 20)                   ; set height of the ivy window
+  (setq ivy-count-format "(%d/%d) ")     ; count format, from the ivy help page
+  (setq ivy-display-style 'fancy)
+  (setq ivy-format-function 'ivy-format-function-line)) ; Make highlight extend all the way to the right
+
+
 ;; Jump to a definition in any open buffer
 ;; https://github.com/vspinu/imenu-anywhere
 (use-package imenu-anywhere
-  :bind ("C-." . imenu-anywhere))
+  ;; TODO: probably need ivy before we bind functions in it
+  :bind ("C-." . ivy-imenu-anywhere))
+
+;; smartparens. use it more
+(use-package smartparens
+  :commands (sp-wrap-with-pair)
+  :config
+  (require 'smartparens-config)
+  (setq sp-show-pair-from-inside nil)
+  (setq sp-base-key-bindings 'paredit)
+  (setq sp-autoskip-closing-pair 'always)
+  (setq sp-hybrid-kill-entire-symbol nil)
+  (sp-use-paredit-bindings)
+  (show-smartparens-global-mode +1)
+  :bind
+  (("M-(" . sp-wrap-round)
+   ("M-\"" . (lambda (&optional arg) (interactive "P") (sp-wrap-with-pair "\"")))
+   ("M-{" . (lambda (&optional arg) (interactive "P") (sp-wrap-with-pair "{")))))
 
 (use-package magit
   :config
@@ -115,13 +234,3 @@
    ("k" . magit-file-dispatch)
    ("l" . magit-log-buffer-file)
    ("b" . magit-blame)))
-
-(use-package smartparens
-  :config
-  (require 'smartparens-config)
-  (setq sp-show-pair-from-inside nil)
-  (setq sp-base-key-bindings 'paredit)
-  (setq sp-autoskip-closing-pair 'always)
-  (setq sp-hybrid-kill-entire-symbol nil)
-  (sp-use-paredit-bindings)
-  (show-smartparens-global-mode +1))
