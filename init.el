@@ -1,3 +1,5 @@
+(defvar line-length 98)
+
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -10,7 +12,6 @@
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
-
 
 ;; Install use-package
 (straight-use-package 'use-package)
@@ -91,6 +92,8 @@
         ;; keep the home clean
         savehist-file (expand-file-name "savehist" savefile-dir))
   (savehist-mode +1)
+  ;; move between visible windows with Shift + arrows
+  (windmove-default-keybindings)
 
   ;; Editorish things
   (setq-default indent-tabs-mode nil) ;; don't use tabs to indent
@@ -101,6 +104,7 @@
   (setq hippie-expand-try-functions-list '(try-expand-dabbrev
                                            try-expand-dabbrev-all-buffers
                                            try-expand-dabbrev-from-kill
+                                           yas-hippie-try-expand
                                            try-complete-file-name-partially
                                            try-complete-file-name
                                            try-expand-all-abbrevs
@@ -110,6 +114,30 @@
                                            try-complete-lisp-symbol))
   (setq tab-always-indent 'complete) ;; works with hippie-expand to complete if already indented. QUESTIONABLE
   (setq blink-matching-paren nil) ;; disable annoying blink-matching-paren
+  ;; ispell
+  (setq ispell-program-name "aspell" ; use aspell instead of ispell
+        ispell-extra-args '("--sug-mode=ultra"))
+  (flyspell-mode +1)
+  ;; highlight the current line
+  (global-hl-line-mode +1)
+  ;; show whitespace
+  (setq whitespace-line-column line-length) ;; limit line length
+  (setq whitespace-style '(face tabs empty trailing lines-tail))
+  (global-whitespace-mode +1)
+  ;; cleanup whitespace on save
+  (add-hook 'before-save-hook 'whitespace-cleanup)
+
+  ;; enable narrowing commands (C-x n ...) HIGHLY QUESTIONABLE
+  (put 'narrow-to-region 'disabled nil)
+  (put 'narrow-to-page 'disabled nil)
+  (put 'narrow-to-defun 'disabled nil)
+
+  ;; enabled change region case commands
+  (put 'upcase-region 'disabled nil)
+  (put 'downcase-region 'disabled nil)
+
+  ;; enable erase-buffer command HIGHLY QUESTIONABLE
+  (put 'erase-buffer 'disabled nil)
 
   )
 ;; end base emacs
@@ -182,6 +210,44 @@
 (use-package move-text
   :bind (([C-S-up] . move-text-up)
          ([C-S-down] . move-text-down)))
+
+;; highlights pasted text and undos, etc QUESTIONABLE utility
+;; https://github.com/k-talo/volatile-highlights.el
+(use-package volatile-highlights
+  :config (volatile-highlights-mode t))
+
+;; expand region resonably QUESTIONABLE because I dont' use it
+;; but it's magnars so it's probably good.
+;; https://github.com/magnars/expand-region.el
+(use-package expand-region
+  :bind (("C-=" . er/expand-region)))
+
+;; automatically save buffers associated with files on buffer switch
+;; and on windows switch
+(use-package super-save
+  :config
+  (setq super-save-actions '(ace-window
+                             avy-goto-line
+                             avy-goto-word-or-subword-1
+                             counsel-find-file
+                             counsel-projectile-find-file
+                             counsel-projectile-ag
+                             counsel-projectile-rg
+                             ivy-resume
+                             rubocop-check-project
+                             rubocop-format-project
+                             rubocop-check-directory
+                             rubocop-format-directory
+                             rubocop-check-current-file
+                             rubocop-autocorrect-project
+                             rubocop-format-current-file
+                             rubocop-autocorrect-directory
+                             rubocop-autocorrect-current-file))
+  (dolist (action super-save-actions)
+    (add-to-list 'super-save-triggers action))
+  (super-save-mode +1))
+
+
 
 (use-package ivy :ensure t
   ;; :diminish (ivy-mode . "")             ; does not display ivy in the modeline
