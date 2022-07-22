@@ -94,6 +94,7 @@
   (savehist-mode +1)
   ;; move between visible windows with Shift + arrows
   (windmove-default-keybindings)
+  (setq windmove-wrap-around t)
 
   ;; Editorish things
   (setq-default indent-tabs-mode nil) ;; don't use tabs to indent
@@ -247,24 +248,55 @@
     (add-to-list 'super-save-triggers action))
   (super-save-mode +1))
 
+(use-package avy
+  :config
+  (setq avy-background t)
+  (setq avy-style 'at-full)
+  :bind
+  (("M-g g" . avy-goto-line)))
 
+(use-package ace-window
+  :config
+  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (setq aw-dispatch-always t)
+  (setq aw-ignore-current t)
+  (setq aw-minibuffer-flag t)
+  :bind
+  (("s-w" . ace-window)))
 
-(use-package ivy :ensure t
+(use-package ivy
   ;; :diminish (ivy-mode . "")             ; does not display ivy in the modeline
   :init
   (ivy-mode 1)                          ; enable ivy globally at startup
   :config
   (setq ivy-use-virtual-buffers t)       ; extend searching to bookmarks and
+  (setq ivy-wrap t)
   (setq ivy-height 20)                   ; set height of the ivy window
   (setq ivy-count-format "(%d/%d) ")     ; count format, from the ivy help page
   (setq ivy-display-style 'fancy)
-  (setq ivy-format-function 'ivy-format-function-line)) ; Make highlight extend all the way to the right
+  (setq ivy-format-function 'ivy-format-function-line)  ; Make highlight extend all the way to the right
+  :bind
+  (("<f6>" . ivy-resume)))
 
+(use-package swiper
+  :bind
+  (("C-s" . swiper-isearch)))
+
+(use-package counsel
+  :bind
+  (("M-x" . counsel-M-x)
+   ("C-x C-f" . counsel-find-file)
+   ("C-h f" . counsel-describe-function)
+   ("C-h v" . counsel-describe-variable)
+   ("C-h o" . counsel-describe-symbol)
+   ("<f2> i" . counsel-info-lookup-symbol)
+   ("<f2> u" . counsel-unicode-char)
+  ;;:bind (:map minibuffer-local-map ("C-r" . counsel-minibuffer-history))
+  )
 
 ;; Jump to a definition in any open buffer
 ;; https://github.com/vspinu/imenu-anywhere
 (use-package imenu-anywhere
-  ;; TODO: probably need ivy before we bind functions in it
   :bind ("C-." . ivy-imenu-anywhere))
 
 ;; smartparens. use it more
@@ -300,3 +332,7 @@
    ("k" . magit-file-dispatch)
    ("l" . magit-log-buffer-file)
    ("b" . magit-blame)))
+
+(use-package projectile
+  :config
+  (setq projectile-cache-file (expand-file-name  "projectile.cache" savefile-dir)))
