@@ -73,6 +73,14 @@
         `((".*" . ,temporary-file-directory)))
   (setq auto-save-file-name-transforms
         `((".*" ,temporary-file-directory t)))
+  ;; I don't particularly like recentf, but I don't know how to stop it, so let's configure it
+  (require 'recentf)
+  (setq recentf-save-file (expand-file-name "recentf" savefile-dir)
+        recentf-max-saved-items 500
+        recentf-max-menu-items 15
+        ;; disable recentf-cleanup on Emacs start, because it can cause
+        ;; problems with remote files
+        recentf-auto-cleanup 'never)
   ;; revert buffers automatically when underlying files are changed externally
   (global-auto-revert-mode t)
   ;; uniquify buffer names better
@@ -96,6 +104,36 @@
   (windmove-default-keybindings)
   (setq windmove-wrap-around t)
 
+  ;; dired - reuse current buffer by pressing 'a'
+  (put 'dired-find-alternate-file 'disabled nil)
+  ;; always delete and copy recursively
+  (setq dired-recursive-deletes 'always)
+  (setq dired-recursive-copies 'always)
+  ;; if there is a dired buffer displayed in the next window, use its
+  ;; current subdir, instead of the current subdir of this dired buffer
+  (setq dired-dwim-target t)
+
+  ;; clean up buffers untouched for 3 days automatically
+  (midnight-delay-set 'midnight-delay "4:30am")
+
+  ;; tramp, for sudo access
+  ;; keep in mind known issues with zsh - see
+  ;; https://blog.karssen.org/2016/03/02/fixing-emacs-tramp-mode-when-using-zsh/
+  (setq tramp-default-method "ssh")
+
+  ;; compilation settings
+  ;; https://stackoverflow.com/a/63710493/4534357
+  ;; https://github.com/atomontage/xterm-color#compilation-buffers
+  (use-package xterm-color)
+  (setq compilation-ask-about-save nil  ; Just save before compiling
+      compilation-always-kill t       ; Just kill old compile processes before starting the new one
+      compilation-scroll-output 'first-error ; Automatically scroll to first error
+      compilation-environment '("TERM=xterm-256color")
+      )
+  (defun my/advice-compilation-filter (f proc string)
+    (funcall f proc (xterm-color-filter string)))
+  (advice-add 'compilation-filter :around #'my/advice-compilation-filter)  ;; colorize compilation buffer
+
   ;; Editorish things
   (setq-default indent-tabs-mode nil) ;; don't use tabs to indent
   (setq-default tab-width 8) ;; but maintain correct appearance
@@ -105,7 +143,7 @@
   (setq hippie-expand-try-functions-list '(try-expand-dabbrev
                                            try-expand-dabbrev-all-buffers
                                            try-expand-dabbrev-from-kill
-                                           yas-hippie-try-expand
+                                           ;; yas-hippie-try-expand
                                            try-complete-file-name-partially
                                            try-complete-file-name
                                            try-expand-all-abbrevs
@@ -125,8 +163,6 @@
   (setq whitespace-line-column line-length) ;; limit line length
   (setq whitespace-style '(face tabs empty trailing lines-tail))
   (global-whitespace-mode +1)
-  ;; cleanup whitespace on save
-  (add-hook 'before-save-hook 'whitespace-cleanup)
 
   ;; enable narrowing commands (C-x n ...) HIGHLY QUESTIONABLE
   (put 'narrow-to-region 'disabled nil)
@@ -137,10 +173,34 @@
   (put 'upcase-region 'disabled nil)
   (put 'downcase-region 'disabled nil)
 
+  ;; C-left &c. window navigation
+  (winner-mode +1)
+
   ;; enable erase-buffer command HIGHLY QUESTIONABLE
   (put 'erase-buffer 'disabled nil)
 
-  )
+  ;; ediff - don't start another frame
+  (setq ediff-window-setup-function 'ediff-setup-windows-plain)
+
+  ;; make a shell script executable automatically on save
+  (add-hook 'after-save-hook
+            'executable-make-buffer-file-executable-if-script-p)
+
+  ;; .zsh file is shell script too
+  (add-to-list 'auto-mode-alist '("\\.zsh\\'" . shell-script-mode))
+  (add-to-list 'auto-mode-alist '("\\.zshrc\\'" . shell-script-mode))
+  (add-to-list 'auto-mode-alist '("\\.env\\'" . shell-script-mode))
+  (add-to-list 'auto-mode-alist '("\\.envrc\\'" . shell-script-mode))
+
+  :bind
+  ("M-/" . hippie-expand)
+
+  :hook
+  ;; enable some really cool extensions like C-x C-j(dired-jump)
+  ((dired-load . (lambda () (load "dired-x")))
+   ;; cleanup whitespace on save
+   (before-save . whitespace-cleanup))
+)
 ;; end base emacs
 
 ;; MacOS specific settings
@@ -176,9 +236,25 @@
 
 ;;; EDITORish things vvv
 
+;; undo-tree
+;; https://gitlab.com/tsc25/undo-tree
+(use-package undo-tree
+  :config
+  (setq undo-tree-history-directory-alist
+        `((".*" . ,temporary-file-directory)))
+  (setq undo-tree-enable-undo-in-region t)
+  (setq undo-tree-auto-save-history t)
+  (global-undo-tree-mode))
+
+;; highlights pasted text and undos, etc QUESTIONABLE utility
+;; https://github.com/k-talo/volatile-highlights.el
+(use-package volatile-highlights
+  :config (volatile-highlights-mode t))
+
 ;; Useful functions from bbatsov
 ;; https://github.com/bbatsov/crux
 (use-package crux
+  :config (crux-with-region-or-line kill-region)
   :bind (("C-c o" . crux-open-with)
          ;; mimic popular IDEs binding, note that it doesn't work in a terminal session
          ("C-a" . crux-move-beginning-of-line)
@@ -211,11 +287,6 @@
 (use-package move-text
   :bind (([C-S-up] . move-text-up)
          ([C-S-down] . move-text-down)))
-
-;; highlights pasted text and undos, etc QUESTIONABLE utility
-;; https://github.com/k-talo/volatile-highlights.el
-(use-package volatile-highlights
-  :config (volatile-highlights-mode t))
 
 ;; expand region resonably QUESTIONABLE because I dont' use it
 ;; but it's magnars so it's probably good.
@@ -285,14 +356,32 @@
 (use-package counsel
   :bind
   (("M-x" . counsel-M-x)
+   ("M-y" . counsel-yank-pop)
    ("C-x C-f" . counsel-find-file)
    ("C-h f" . counsel-describe-function)
    ("C-h v" . counsel-describe-variable)
    ("C-h o" . counsel-describe-symbol)
    ("<f2> i" . counsel-info-lookup-symbol)
-   ("<f2> u" . counsel-unicode-char)
+   ("<f2> u" . counsel-unicode-char))
   ;;:bind (:map minibuffer-local-map ("C-r" . counsel-minibuffer-history))
   )
+
+;; alternative M-x with history and sorting
+;; it's not really editorish, but ivy needs to be loaded first
+;; https://github.com/DarwinAwardWinner/amx
+(use-package amx
+  :config
+  (setq-default amx-save-file (expand-file-name "amx-history" savefile-dir))
+  (amx-mode))
+
+;; visual feedback on search and replace
+;; https://github.com/emacsorphanage/anzu
+(use-package anzu
+  :init
+  (global-anzu-mode)
+  :bind
+  (("M-%" . anzu-query-replace)
+   ("C-M-%" . anzu-query-replace-regexp)))
 
 ;; Jump to a definition in any open buffer
 ;; https://github.com/vspinu/imenu-anywhere
@@ -302,8 +391,9 @@
 ;; smartparens. use it more
 (use-package smartparens
   :commands (sp-wrap-with-pair)
-  :config
+  :init
   (require 'smartparens-config)
+  :config
   (setq sp-show-pair-from-inside nil)
   (setq sp-base-key-bindings 'paredit)
   (setq sp-autoskip-closing-pair 'always)
@@ -333,6 +423,16 @@
    ("l" . magit-log-buffer-file)
    ("b" . magit-blame)))
 
+;; add the git diff to highlights to the gutter
+;; https://github.com/dgutov/diff-hl
+(use-package diff-hl
+  :config
+  (global-diff-hl-mode +1)
+  :hook
+  (dired-mode . diff-hl-dired-mode)
+  (magit-post-refresh . diff-hl-magit-post-refresh))
+
 (use-package projectile
+  :init (projectile-mode t)
   :config
   (setq projectile-cache-file (expand-file-name  "projectile.cache" savefile-dir)))
