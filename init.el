@@ -959,20 +959,41 @@
   :straight nil
   :config
   (setq js-indent-level 2)
+  ;; let the lsp do the goto
+  (unbind-key "M-." js-mode-map)
+  (unbind-key "M-." js-ts-mode-map)
   :mode
-  ("\\.tsx" . tsx-ts-mode))
+  (("\\.tsx\\'" . tsx-ts-mode)
+   ("\\.jsx\\'" . tsx-ts-mode)))
 
-(use-package jest-test-mode
-  :commands jest-test-mode
-  :config
-  (setq jest-test-mode-map "C-c ,")
+;; I couldn't make it work, and the keybindings are in all the wrong places
+;; (use-package jest-test-mode
+;;   :commands jest-test-mode
+;;   :config
+;;   (setq jest-test-mode-map "C-c ,")
+;;   :custom
+;;   (jest-test-options '())
+;;   (jest-test-command-string "yarn %s test %s %s")
+;;   :hook (typescript-ts-base-mode))
+
+;; run jest tests with a popup (jest-popup)
+;; https://github.com/emiller88/emacs-jest
+(use-package jest
   :custom
-  (jest-test-options '())
-  (jest-test-command-string "yarn %s test %s %s")
-  :hook (typescript-ts-base-mode))
+  (jest-executable "yarn test")
+  (jest-unsaved-buffers-behavior 'save-current)
+  :bind
+  (:map jest-minor-mode-map
+        (("C-c , v" . jest-file)
+         ("C-c , r" . jest-repeat)
+         ("C-c , RET" . jest-popup)))
+  :hook (typescript-ts-base-mode . jest-minor-mode))
 
 (use-package graphql-mode
   :mode
   ("\\.graphql\\'" . graphql-mode))
 
-(use-package prettier)
+(use-package prettier
+  :config
+  (add-to-list 'prettier-major-mode-parsers '(typescript-ts-base-mode . (typescript babel-ts)))
+  (global-prettier-mode))
