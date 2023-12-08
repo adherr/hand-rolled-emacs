@@ -13,6 +13,8 @@
 
 ;; Install use-package
 (straight-use-package 'use-package)
+(use-package use-package
+  :config (setq use-package-always-demand t))
 
 ;; Configure use-package to use straight.el by default
 (use-package straight
@@ -23,7 +25,6 @@
 ;; load my path
 ;; https://github.com/purcell/exec-path-from-shell
 (use-package exec-path-from-shell
-  :demand
   :config (exec-path-from-shell-initialize))
 
 (defvar line-length 120)
@@ -31,6 +32,7 @@
 (use-package emacs
   :config
   (global-display-line-numbers-mode 1)
+  (column-number-mode 1)
   (blink-cursor-mode -1)
   ;; toolbar isn't on in TTY
   (tool-bar-mode -1)
@@ -60,6 +62,8 @@
                       "%b"))))
   ;; confirm exit because fat fingers
   (setq confirm-kill-emacs 'y-or-n-p)
+  ;; I don't think I've ever successfully transposed words, but it's a mess when I open tabs in emacs
+  (unbind-key "M-t" global-map)
   ;; desktop saving
   (defvar savefile-dir (expand-file-name "savefile" user-emacs-directory) "Where we save emacs's state containing files")
   (unless (file-exists-p savefile-dir)
@@ -163,7 +167,7 @@
   (global-hl-line-mode +1)
   ;; show whitespace
   (setq whitespace-line-column line-length) ;; limit line length
-  (setq whitespace-style '(face tabs empty trailing lines-tail))
+  (setq whitespace-style '(face tabs empty trailing)) ;; add lines-tail to highlight the end of long lines when required
   (global-whitespace-mode +1)
 
   ;; enable narrowing commands (C-x n ...) HIGHLY QUESTIONABLE
@@ -189,17 +193,23 @@
             'executable-make-buffer-file-executable-if-script-p)
 
   ;; .zsh file is shell script too
-  (add-to-list 'auto-mode-alist '("\\.zsh\\'" . shell-script-mode))
-  (add-to-list 'auto-mode-alist '("\\.zshrc\\'" . shell-script-mode))
-  (add-to-list 'auto-mode-alist '("\\.env\\'" . shell-script-mode))
-  (add-to-list 'auto-mode-alist '("\\.envrc\\'" . shell-script-mode))
+  :mode
+  ("\\.zsh\\'" . shell-script-mode)
+  ("\\.zshrc\\'" . shell-script-mode)
+  ("\\.env\\'" . shell-script-envrc)
+  ("\\.mode\\'" . shell-script-mode)
+  ;; ruby mode should include rbi files
+  ("\\.rbi\\'" . ruby-ts-mode)
 
-  ;;
 
   :bind
   (("M-/" . hippie-expand)
    ("C-x O" . (lambda () (interactive)
-                (other-window -1))))
+                (other-window -1)))
+   ("s-[" . (lambda () (interactive) (insert-char #x201c)))
+   ("s-{" . (lambda () (interactive) (insert-char #x201d)))
+   ("s-]" . (lambda () (interactive) (insert-char #x2018)))
+   ("s-}" . (lambda () (interactive) (insert-char #x2019))))
 
   ;; go to definition help functions
   (:map help-map
@@ -229,7 +239,6 @@
 
   ;; fire up the server, since we don't have systemd
   (use-package server
-    :demand
     :config (unless (server-running-p) (server-start)))
 
   ;; emoji
@@ -237,6 +246,30 @@
   :config (set-fontset-font t 'unicode "Apple Color Emoji" nil 'prepend)
   )
 ;; end MacOS
+
+(use-package minions
+  :config
+  (minions-mode +1)
+  :bind ("<S-down-mouse-3>" . minions-minor-modes-menu))
+
+;; smartparens. use it more
+(use-package smartparens
+  :init
+  (require 'smartparens-config)
+  :config
+  (setq sp-show-pair-from-inside nil)
+  (setq sp-base-key-bindings 'paredit)
+  (setq sp-autoskip-closing-pair 'always)
+  (setq sp-hybrid-kill-entire-symbol nil)
+  ;; this bombs a bunch of bindings into everywhere, so keep this near the top, so custom bindings aren't overridden
+  (sp-use-paredit-bindings)
+  (show-smartparens-global-mode +1)
+  (smartparens-global-mode +1)
+  :bind
+  (("M-(" . sp-wrap-round)
+   ("M-\"" . (lambda (&optional arg) (interactive "P") (sp-wrap-with-pair "\"")))
+   ("M-{" . sp-wrap-curly)
+   ("C-s-k" . sp-kill-hybrid-sexp)))
 
 ;; love me some zenburn theme
 (use-package zenburn-theme
@@ -270,8 +303,7 @@
 ;; https://github.com/bbatsov/crux
 (use-package crux
   :config (crux-with-region-or-line kill-region)
-  :bind (("C-c o" . crux-open-with)
-         ;; mimic popular IDEs binding, note that it doesn't work in a terminal session
+  :bind (;; mimic popular IDEs binding, note that it doesn't work in a terminal session
          ("C-a" . crux-move-beginning-of-line)
          ([S-return] . crux-smart-open-line)
          ("M-o" . crux-smart-open-line)
@@ -280,9 +312,6 @@
          ("C-c n" . crux-cleanup-buffer-or-region)
          ("C-c f" . crux-recentf-find-file)
          ("C-M-z" . crux-indent-defun)
-         ("C-c u" . crux-view-url)
-         ("C-c e" . crux-eval-and-replace)
-         ("C-c s" . crux-swap-windows)
          ("C-c D" . crux-delete-file-and-buffer)
          ("C-c d" . crux-duplicate-current-line-or-region)
          ("C-c M-d" . crux-duplicate-and-comment-current-line-or-region)
@@ -304,7 +333,7 @@
 ;; but it's magnars so it's probably good.
 ;; https://github.com/magnars/expand-region.el
 (use-package expand-region
-  :bind (("C-=" . er/expand-region)))
+  :bind ("C-=" . er/expand-region))
 
 ;; automatically save buffers associated with files on buffer switch
 ;; and on windows switch
@@ -341,7 +370,7 @@
   (setq avy-style 'at-full)
   :bind
   (("M-g g" . avy-goto-line)
-   ("M-j" . avy-goto-char-timer)))
+   ("C-c j" . avy-goto-char-timer)))
 
 (use-package ace-window
   :config
@@ -391,7 +420,6 @@
 ;;   (setq-default amx-save-file (expand-file-name "amx-history" savefile-dir))
 ;;   (amx-mode))
 
-(message "done crux")
 ;; replace ivy with vertico. It does one thing well rather than replacing all of the commands
 (use-package vertico
   :init (vertico-mode)
@@ -458,22 +486,10 @@
 
 ;; Allow searches to match space separated keywords in any order (as regexes)
 (use-package orderless
-  :demand t
   :custom
   (completion-styles '(orderless basic))
   (completion-category-defaults nil)
   (completion-category-overrides '((file (styles basic partial-completion)))))
-
-;; various searching commands
-(use-package consult
-  :bind
-  (("M-i" . consult-imenu)
-   ("C-." . consult-imenu-multi)
-   ("C-x b" . consult-buffer)
-   ("C-c b" . consult-project-buffer)
-   ("M-y" . consult-yank-replace)
-   ("C-c f" . consult-recent-file)
-   ("C-s" . consult-line)))
 
 ;; add help information to the completion results in the minibuffer
 ;; https://github.com/minad/marginalia
@@ -482,17 +498,6 @@
   (marginalia-mode)
   :bind (:map minibuffer-local-map
               ("M-A" . marginalia-cycle)))
-
-;; cuz it's awesome. Used by consult, so we don't config here
-;; https://github.com/nlamirault/ripgrep.el
-(use-package ripgrep)
-
-;; allow us to edit a grep buffer
-;; https://github.com/mhayashi1120/Emacs-wgrep
-;; How to use: consult-ripgrep -> embark-consult / embark-export -> change grep buffer to wgrep C-c C-p -> edit lines -> C-x s apply changes and save all buffers
-(use-package wgrep
-  :config
-  (setq wgrep-auto-save-buffer t))
 
 ;; do stuff from where we are. Config lifted straight from
 ;; https://github.com/oantolin/embark
@@ -516,11 +521,36 @@
 ;; Consult users will also want the embark-consult package.
 (use-package embark-consult
   :after (embark consult)
-  :demand t ; only necessary if you have the hook below
   ;; if you want to have consult previews as you move around an
   ;; auto-updating embark collect buffer
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
+
+;; various searching commands
+(use-package consult
+  :config
+  (consult-customize
+   consult-line
+   :add-history (seq-some #'thing-at-point '(region symbol)))
+  :bind
+  (("M-i" . consult-imenu)
+   ;; ("C-." . consult-imenu-multi)
+   ("C-x b" . consult-buffer)
+   ("C-c b" . consult-project-buffer)
+   ("M-y" . consult-yank-replace)
+   ("C-c f" . consult-recent-file)
+   ("C-s" . consult-line)))
+
+;; cuz it's awesome. Used by consult, so we don't config here
+;; https://github.com/nlamirault/ripgrep.el
+(use-package ripgrep)
+
+;; allow us to edit a grep buffer
+;; https://github.com/mhayashi1120/Emacs-wgrep
+;; How to use: consult-ripgrep -> embark-consult / embark-export -> change grep buffer to wgrep C-c C-p -> edit lines -> C-x s apply changes and save all buffers
+(use-package wgrep
+  :config
+  (setq wgrep-auto-save-buffer t))
 
 ;; better help
 (use-package helpful
@@ -528,24 +558,6 @@
   ("C-h f" . helpful-callable)
   ("C-h v" . helpful-variable)
   ("C-h k" . helpful-key))
-
-;; smartparens. use it more
-(use-package smartparens
-  :demand t
-  :init
-  (require 'smartparens-config)
-  :config
-  (setq sp-show-pair-from-inside nil)
-  (setq sp-base-key-bindings 'paredit)
-  (setq sp-autoskip-closing-pair 'always)
-  (setq sp-hybrid-kill-entire-symbol nil)
-  (sp-use-paredit-bindings)
-  (show-smartparens-global-mode +1)
-  :bind
-  (("M-(" . sp-wrap-round)
-   ("M-\"" . (lambda (&optional arg) (interactive "P") (sp-wrap-with-pair "\"")))
-   ("M-{" . sp-wrap-curly)
-   ("C-s-k" . sp-kill-hybrid-sexp)))
 
 (use-package multiple-cursors
   :bind
@@ -587,7 +599,26 @@
               ("C-c p" . projectile-command-map)
               :map projectile-command-map
               ;; consult ripgrep obeys project setting, and it's nicer than the default projectile command
-              ("s r" . consult-ripgrep))
+              ("s r" . consult-ripgrep)
+              ("w f" . +kill-project-file-path)
+              ("w l" . +kill-project-file-line-path))
+  :config
+  (defun +project-file-path ()
+    (file-relative-name buffer-file-name (projectile-project-root)))
+
+  (defun +kill-project-file-path ()
+    (interactive)
+    (let ((path (+project-file-path)))
+      (kill-new path)
+      (message path)))
+
+  (defun +kill-project-file-line-path ()
+    (interactive)
+    (let ((path-line (format "%s:%s"
+                             (+project-file-path)
+                             (line-number-at-pos))))
+      (kill-new path-line)
+      (message path-line)))
   ;; TODO: make sure this is a git repo before running magit-status and default to something else otherwise
   :custom (projectile-switch-project-action 'magit-status))
 
@@ -612,6 +643,12 @@
   :bind
   ([remap zap-to-char] . zop-to-char))
 
+;; I rely on M-w to copy whole line with no region. This is available with easy-kill
+;; https://github.com/leoliu/easy-kill
+(use-package easy-kill
+  :bind
+  ("M-w" . easy-kill))
+
 ;; visual feedback on search and replace
 ;; https://github.com/emacsorphanage/anzu
 (use-package anzu
@@ -626,8 +663,8 @@
   :hook ((prog-mode org-mode) . rainbow-delimiters-mode))
 
 ;; full angry-fruit-salad mode. Maybe I should try prism again, as I'm not sure this is valuable enough to add this much chaos
-(use-package rainbow-identifiers
-  :hook (prog-mode . rainbow-identifiers-mode))
+;; (use-package rainbow-identifiers
+;;   :hook (prog-mode . rainbow-identifiers-mode))
 
 ;; prism colors by code nesting depth
 ;; Tried this, didn't love the way it handles comments-I think they should always be the same color, not just desaturated at the level they appear.
@@ -635,9 +672,71 @@
   ;; you need different modes for whitespace delimited languages
   ;; :hook ((elisp-mode ruby-ts-mode) . prism-mode))
 
+;; treemacs for that file browser goodness
+;; https://github.com/Alexander-Miller/treemacs
+(use-package treemacs
+  :config
+  (setq treemacs-width 65)
+  (defun treemacs-exclusive-show ()
+    (interactive)
+    (treemacs-display-current-project-exclusively)
+    (treemacs-select-window))
+  :bind
+  (("<f8>" . treemacs)
+   ("<f9>" . treemacs-exclusive-show)))
+
+;; ligatures, for fun
+;; https://github.com/jming422/fira-code-mode
+(use-package fira-code-mode
+  :config
+  ;; (fira-code-mode-install-fonts) ;; this prompts every time :(
+  (global-fira-code-mode))
+
 ;;;;;;;;;;;;;;;;;
 ;; Programming ;;
 ;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;; General
+
+;; eglot for LSP. Maybe we'll try LSP mode later for sorbet if we need to LSs at the same time
+;; (use-package eglot
+;;   :config
+;;   (add-to-list 'eglot-server-programs
+;;                `((ruby-mode ruby-ts-mode) . ,(eglot-alternatives
+;;                                               '(("srb" "tc" "--lsp")
+;;                                               ("solargraph" "socket" "--port" :autoport))))))
+;;                '(ruby-base-mode .
+;;                                     '(("solargraph")
+;;                                       )))))
+
+;; it looks like LSP mode supports sorbet out of the box
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  (setq lsp-enabled-clients '(sorbet-ls my-rubocop-ls graphql-lsp ts-ls eslint))
+  :config
+  (lsp-register-client
+     (make-lsp-client :new-connection (lsp-stdio-connection '("/Users/andrew.herr/workspace/zenpayroll/bin/rubocop" "--lsp"))
+                      :activation-fn (lsp-activate-on "ruby")
+                      :add-on? t
+                      :server-id 'my-rubocop-ls))
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]tmp\\'")
+  :custom
+  (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-2.4.2/server/out/eslintServer.js" "--stdio"))
+  (lsp-eslint-lint-task-options "-c /Users/andrew.herr/workspace/zenparoll/.eslintrc.js")
+  :hook (((graphql-mode js-base-mode ruby-base-mode typescript-ts-base-mode) . lsp-deferred)
+         ;; if you want which-key integration
+         (lsp-mode . lsp-enable-which-key-integration)))
+
+(use-package lsp-treemacs)
+
+;; GH CoPilot??
+;; https://github.com/zerolfx/copilot.el
+(use-package copilot
+  :straight (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
+  :ensure t)
 
 ;; flycheck mode to highlight warnings and errors in code
 ;; https://www.flycheck.org/en/latest
@@ -647,11 +746,12 @@
 ;; get the treesit goodness without specifying grammar download locations or major mode translations
 ;; REMEMBER that hooks don't transfer to the ts mode
 (use-package treesit-auto
-  :demand t
   :config
   (setq treesit-auto-install 'prompt)
   (global-treesit-auto-mode))
 
+;; tree-sitter navigation and semantic editing
+;; https://github.com/mickeynp/combobulate
 (use-package combobulate
   :preface
   ;; You can customize Combobulate's key prefix here.
@@ -670,9 +770,44 @@
          (typescript-ts-mode . combobulate-mode)
          (tsx-ts-mode . combobulate-mode)))
 
+;; subword mode is required! (built in)
+(use-package subword
+  :straight nil
+  :config (global-subword-mode 1))
+
+;; company to complete anywhere
+(use-package company
+  :hook (prog-mode . company-mode)
+  :bind (:map company-active-map
+              ("<tab>" . company-complete-selection))
+
+  :custom
+  (company-backends '((company-capf company-dabbrev-code)))
+  (company-idle-delay 0.2)
+  (company-minimum-prefix-length 3)
+  (company-tooltip-align-annotations t)
+  (company-tooltip-limit 20)
+
+  :config
+  (setq lsp-completion-provider :capf))
+
+;; a new frontend that's hopefully better. suggested by lsp-mode
+;; https://github.com/sebastiencs/company-box
+(use-package company-box
+  :hook (company-mode . company-box-mode))
+
+;; I like to paste working github links into slack
+;; https://github.com/sshaw/git-link
+(use-package git-link
+  :commands git-link
+  :custom
+  (git-link-default-branch "main"))
+
+;;;;;;;;; Languages
+
 ;; markdown mode
 (use-package markdown-mode
-  :ensure-system-package pandoc
+  ;; :ensure-system-package pandoc
   :commands gfm-mode
   :mode (("\\.md$" . gfm-mode))
   :config
@@ -691,6 +826,7 @@
 ;;;;;;;;;;
 ;; Ruby ;;
 ;;;;;;;;;;
+
 ;; web mode to deal with templates and regular html
 ;; https://web-mode.org/
 (use-package web-mode
@@ -708,8 +844,8 @@
 ;; config here is from HRS with a few changes
 ;; https://github.com/pezra/rspec-mode/
 (use-package rspec-mode
-  :after ruby-mode
-  :ensure-system-package (rspec . "gem install rspec")
+  ;; :after ruby-base-mode
+  ;; :ensure-system-package (rspec . "gem install rspec")
 
   :hook (css-mode
          deadgrep-mode
@@ -720,13 +856,39 @@
          web-mode
          yard-mode)
 
+  :config
+  (defun +rspec-package-root-directory-p (directory)
+    (file-regular-p (expand-file-name "package.yml" directory)))
+
+  (defun +rspec-package-root (&optional directory)
+    "Find the root directory of the package.
+     Walk the directory tree until it finds a package.yml file."
+    (let ((directory (file-name-as-directory (or directory default-directory))))
+      (cond ((rspec-root-directory-p directory)
+             (error "Could not determine the project root."))
+            ((+rspec-package-root-directory-p directory) (expand-file-name directory))
+            (t (+rspec-package-root (file-name-directory (directory-file-name directory)))))))
+
+  (defun rspec-target-in-holder-dir-p (a-file-name)
+    (string-match (concat "^" (concat
+                               (regexp-quote
+                                (+rspec-package-root a-file-name))
+                               (regexp-opt rspec-primary-source-dirs)
+                               "/"))
+                  a-file-name))
+  :bind (:map rspec-verifiable-mode-keymap
+                ("s" . rspec-verify-single))
   :custom
-  ;; (compilation-scroll-output nil)
+  ;; this is for Gusto/zenpayroll where the binstub takes care of bundler and spring
+  (rspec-use-spring-when-possible nil)
+  (rspec-use-bundler-when-possible nil)
+  (rspec-spec-command "bin/rspec --no-profile")
   (rspec-command-options "--color"))
 
 ;; standard test mode keybindings, not as featureful as rspec-mode
 ;; https://github.com/arthurnn/minitest-emacs
 (use-package minitest
+  :after ruby-base-mode
   :config (setq minitest-use-rails t)
   :hook (ruby-base-mode . minitest-mode))
 
@@ -762,44 +924,55 @@
 
 ;; give me an interactive shell if we hit a breakpoint
 (use-package inf-ruby
-  :straight nil
   :config
   (inf-ruby-enable-auto-breakpoint)
   :hook (ruby-base-mode . inf-ruby-minor-mode))
+
+;; it would be nice to be able to run bundle without switching apps
+;; https://github.com/endofunky/bundler.el
+(use-package bundler
+  :defer t
+  :commands bundle-install)
 
 ;; projectile-rails so I theoretically never need to use the terminal
 ;; https://github.com/asok/projectile-rails
 (use-package projectile-rails
   :config
   (projectile-rails-global-mode)
-  :bind (:map projectile-rails-mode-map ("C-c r" . projectile-rails-command-map)))
+  :bind (:map projectile-rails-mode-map ("C-c e" . projectile-rails-command-map)))
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(safe-local-variable-values
-   '((flycheck-checker . ruby-standardrb))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+;; I'd like to run rubocop manually until I can figure out how to get the lsp to do it
+;; (figured it out, but it requires the lsp to be in the bundle, which will be hard to manage. lsp-format-buffer)
+(use-package rubocop)
 
-;; (defun set-exec-path-from-shell-PATH ()
-;;   "Set up Emacs' `exec-path' and PATH environment variable to match
-;; that used by the user's shell.
+;; autoformat with rubocop via the lsp. We'll see
+(use-package rubocopfmt
+  :hook
+  (ruby-base-mode . rubocopfmt-mode)
+  :custom
+  (rubocopfmt-on-save-use-lsp-format-buffer t))
 
-;; This is particularly useful under Mac OS X and macOS, where GUI
-;; apps are not started from a shell."
-;;   (interactive)
-;;   (let ((path-from-shell (replace-regexp-in-string
-;; 			  "[ \t\n]*$" "" (shell-command-to-string
-;; 					  "$SHELL --login -c 'echo $PATH'"
-;; 						    ))))
-;;     (setenv "PATH" path-from-shell)
-;;     (setq exec-path (split-string path-from-shell path-separator))))
+;;;;;;;;;;;;;;;;
+;; Javascript ;;
+;;;;;;;;;;;;;;;;
+(use-package typescript-ts-mode
+  :straight nil
+  :config
+  (setq js-indent-level 2)
+  :mode
+  ("\\.tsx" . tsx-ts-mode))
 
-;; (set-exec-path-from-shell-PATH)
+(use-package jest-test-mode
+  :commands jest-test-mode
+  :config
+  (setq jest-test-mode-map "C-c ,")
+  :custom
+  (jest-test-options '())
+  (jest-test-command-string "yarn %s test %s %s")
+  :hook (typescript-ts-base-mode))
+
+(use-package graphql-mode
+  :mode
+  ("\\.graphql\\'" . graphql-mode))
+
+(use-package prettier)
