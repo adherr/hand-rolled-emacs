@@ -140,6 +140,34 @@
     (funcall f proc (xterm-color-filter string)))
   (advice-add 'compilation-filter :around #'my/advice-compilation-filter)  ;; colorize compilation buffer
 
+  ;;; advice for find-file to open at line-number using <filename>:<line-number> format
+  ;; from https://www.emacswiki.org/emacs/find-file-with-line-number
+  (define-advice find-file (:around (proc filename &optional wildcards) with-line-number)
+    "if format is <filename>:#, open file at line-number #"
+    (let* (;; fap-<junk> deals with ffap stripping line numbers
+           (fap (thing-at-point 'filename t))
+           (fap-lino-idx (if fap (string-match ":[0-9]+$" fap)))
+           (fap-line-num (if fap-lino-idx
+                             (string-to-number (substring fap (1+ (match-beginning 0)) (match-end 0)))))
+           (fap-name (if fap (expand-file-name (if fap-lino-idx (substring fap 0 fap-lino-idx) fap))))
+           ;; fn-<junk> deals with the filename in the minibuffer
+           (fn-lino-idx (string-match ":[0-9]+$" filename))
+           (fn-line-num (if fn-lino-idx
+                            (string-to-number (substring filename (1+ (match-beginning 0)) (match-end 0)))))
+           (filename (if fn-lino-idx (substring filename 0 fn-lino-idx) filename))
+           ;; pick out the right line number (fap- or fn-, which may have been edited by the user)
+           (line-number (cond (;; the first condition is necessary becaue fn-line-num nil with
+                               ;; fap-line-num non-nil would default to wrong line number
+                               (not (equal filename fap-name)) fn-line-num)
+                              (fn-line-num fn-line-num)   ; prefer user's line-num ...
+                              (fap-line-num fap-line-num) ; ... over fap's line-num
+                              (t nil)))                   ; no line numbers anywhere
+           (res (apply proc filename '(wildcards)))) ; funcall also works with same syntax
+      (when line-number
+        (goto-char (point-min))
+        (forward-line (1- line-number)))
+      res))
+
   ;; Editorish things
   (setq-default indent-tabs-mode nil) ;; don't use tabs to indent
   (setq-default tab-width 8) ;; but maintain correct appearance
