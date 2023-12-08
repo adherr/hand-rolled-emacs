@@ -1,13 +1,11 @@
-(defvar line-length 98)
-
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
+      (bootstrap-version 6))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
         (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
          'silent 'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
@@ -18,13 +16,17 @@
 
 ;; Configure use-package to use straight.el by default
 (use-package straight
-  :custom (straight-use-package-by-default t))
+  :custom
+  (straight-use-package-by-default t)
+  (straight-host-usernames `((github . "adherr"))))
 
 ;; load my path
+;; https://github.com/purcell/exec-path-from-shell
 (use-package exec-path-from-shell
   :demand
   :config (exec-path-from-shell-initialize))
 
+(defvar line-length 120)
 ;; base Emacs config
 (use-package emacs
   :config
@@ -67,20 +69,20 @@
   (setq desktop-path (list savefile-dir))
   (setq desktop-dirname savefile-dir)
   (setq desktop-restore-eager 6)
-  (desktop-save-mode t)
+  (desktop-save-mode 1)
   ;; store all backup and autosave files in the tmp dir
   (setq backup-directory-alist
         `((".*" . ,temporary-file-directory)))
   (setq auto-save-file-name-transforms
         `((".*" ,temporary-file-directory t)))
-  ;; I don't particularly like recentf, but I don't know how to stop it, so let's configure it
-  (require 'recentf)
+  ;; setup recenf mode because sometimes it's helpful
   (setq recentf-save-file (expand-file-name "recentf" savefile-dir)
         recentf-max-saved-items 500
         recentf-max-menu-items 15
         ;; disable recentf-cleanup on Emacs start, because it can cause
         ;; problems with remote files
         recentf-auto-cleanup 'never)
+  (recentf-mode)
   ;; revert buffers automatically when underlying files are changed externally
   (global-auto-revert-mode t)
   ;; uniquify buffer names better
@@ -94,7 +96,7 @@
   ;; savehist keeps track of some history
   (setq savehist-additional-variables
         ;; search entries
-        '(search-ring regexp-search-ring)
+        '(search-ring regexp-search-ring vertico-repeat-history)
         ;; save every minute
         savehist-autosave-interval 60
         ;; keep the home clean
@@ -126,10 +128,10 @@
   ;; https://github.com/atomontage/xterm-color#compilation-buffers
   (use-package xterm-color)
   (setq compilation-ask-about-save nil  ; Just save before compiling
-      compilation-always-kill t       ; Just kill old compile processes before starting the new one
-      compilation-scroll-output 'first-error ; Automatically scroll to first error
-      compilation-environment '("TERM=xterm-256color")
-      )
+        compilation-always-kill t       ; Just kill old compile processes before starting the new one
+        compilation-scroll-output 'first-error ; Automatically scroll to first error
+        compilation-environment '("TERM=xterm-256color")
+        )
   (defun my/advice-compilation-filter (f proc string)
     (funcall f proc (xterm-color-filter string)))
   (advice-add 'compilation-filter :around #'my/advice-compilation-filter)  ;; colorize compilation buffer
@@ -192,15 +194,27 @@
   (add-to-list 'auto-mode-alist '("\\.env\\'" . shell-script-mode))
   (add-to-list 'auto-mode-alist '("\\.envrc\\'" . shell-script-mode))
 
+  ;;
+
   :bind
-  ("M-/" . hippie-expand)
+  (("M-/" . hippie-expand)
+   ("C-x O" . (lambda () (interactive)
+                (other-window -1))))
+
+  ;; go to definition help functions
+  (:map help-map
+        ("C-f" . find-function)
+        ("C-k" . find-function-on-key)
+        ("C-v" . find-variable)
+        ("C-l" . find-library)
+        ("C-i" . info-display-manual))
 
   :hook
   ;; enable some really cool extensions like C-x C-j(dired-jump)
   ((dired-load . (lambda () (load "dired-x")))
    ;; cleanup whitespace on save
    (before-save . whitespace-cleanup))
-)
+  )
 ;; end base emacs
 
 ;; MacOS specific settings
@@ -226,6 +240,7 @@
 
 ;; love me some zenburn theme
 (use-package zenburn-theme
+  :straight (:host github :repo "bbatsov/zenburn-emacs")
   :config
   (load-theme 'zenburn t))
 
@@ -234,7 +249,7 @@
   :config
   (which-key-mode))
 
-;;; EDITORish things vvv
+      ;;; EDITORish things vvv
 
 ;; undo-tree
 ;; https://gitlab.com/tsc25/undo-tree
@@ -261,6 +276,7 @@
          ([S-return] . crux-smart-open-line)
          ("M-o" . crux-smart-open-line)
          ([C-S-return] . crux-smart-open-line-above)
+         ([C-backspace] . crux-kill-line-backwards)
          ("C-c n" . crux-cleanup-buffer-or-region)
          ("C-c f" . crux-recentf-find-file)
          ("C-M-z" . crux-indent-defun)
@@ -280,13 +296,9 @@
          ("s-r" . crux-recentf-find-file)
          ("s-j" . crux-top-join-line)
          ("s-k" . crux-kill-whole-line)
+         ([remap kill-whole-line] . crux-kill-whole-line)
          ("s-o" . crux-smart-open-line-above)))
 
-;; Move a line or region up and down
-;; https://github.com/emacsfodder/move-text
-(use-package move-text
-  :bind (([C-S-up] . move-text-up)
-         ([C-S-down] . move-text-down)))
 
 ;; expand region resonably QUESTIONABLE because I dont' use it
 ;; but it's magnars so it's probably good.
@@ -299,13 +311,17 @@
 (use-package super-save
   :config
   (setq super-save-actions '(ace-window
+                             avy-goto-char-timer
                              avy-goto-line
                              avy-goto-word-or-subword-1
-                             counsel-find-file
-                             counsel-projectile-find-file
-                             counsel-projectile-ag
-                             counsel-projectile-rg
-                             ivy-resume
+                             consult-imenu-multi
+                             consult-ripgrep
+                             find-file
+                             minitest-rerun
+                             minitest-verify
+                             minitest-verify-all
+                             minitest-verify-single
+                             projectile-find-file
                              rubocop-check-project
                              rubocop-format-project
                              rubocop-check-directory
@@ -324,73 +340,198 @@
   (setq avy-background t)
   (setq avy-style 'at-full)
   :bind
-  (("M-g g" . avy-goto-line)))
+  (("M-g g" . avy-goto-line)
+   ("M-j" . avy-goto-char-timer)))
 
 (use-package ace-window
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (setq aw-dispatch-always t)
-  (setq aw-ignore-current t)
   (setq aw-minibuffer-flag t)
   :bind
   (("s-w" . ace-window)))
 
-(use-package ivy
-  ;; :diminish (ivy-mode . "")             ; does not display ivy in the modeline
-  :init
-  (ivy-mode 1)                          ; enable ivy globally at startup
-  :config
-  (setq ivy-use-virtual-buffers t)       ; extend searching to bookmarks and
-  (setq ivy-wrap t)
-  (setq ivy-height 20)                   ; set height of the ivy window
-  (setq ivy-count-format "(%d/%d) ")     ; count format, from the ivy help page
-  (setq ivy-display-style 'fancy)
-  (setq ivy-format-function 'ivy-format-function-line)  ; Make highlight extend all the way to the right
-  :bind
-  (("<f6>" . ivy-resume)))
+;; (use-package swiper
+;;   :bind
+;;   (("C-s" . swiper-isearch)))
 
-(use-package swiper
-  :bind
-  (("C-s" . swiper-isearch)))
+;; (use-package ivy
+;;   ;; :diminish (ivy-mode . "")             ; does not display ivy in the modeline
+;;   :init
+;;   (ivy-mode 1)                          ; enable ivy globally at startup
+;;   :config
+;;   (setq ivy-use-virtual-buffers t)       ; extend searching to bookmarks and
+;;   (setq ivy-wrap t)
+;;   (setq ivy-height 20)                   ; set height of the ivy window
+;;   (setq ivy-count-format "(%d/%d) ")     ; count format, from the ivy help page
+;;   (setq ivy-display-style 'fancy)
+;;   :bind
+;;   (("<f6>" . ivy-resume)))
 
-(use-package counsel
-  :bind
-  (("M-x" . counsel-M-x)
-   ("M-y" . counsel-yank-pop)
-   ("C-x C-f" . counsel-find-file)
-   ("C-h f" . counsel-describe-function)
-   ("C-h v" . counsel-describe-variable)
-   ("C-h o" . counsel-describe-symbol)
-   ("<f2> i" . counsel-info-lookup-symbol)
-   ("<f2> u" . counsel-unicode-char))
-  ;;:bind (:map minibuffer-local-map ("C-r" . counsel-minibuffer-history))
-  )
+;; (use-package counsel
+;;   :bind
+;;   (("M-x" . counsel-M-x)
+;;    ("M-y" . counsel-yank-pop)
+;;    ("C-x C-f" . counsel-find-file)
+;;    ("C-h a" . counsel-apropos)
+;;    ("C-h f" . counsel-describe-function)
+;;    ("C-h o" . counsel-describe-symbol)
+;;    ("C-h v" . counsel-describe-variable)
+;;    ("<f2> i" . counsel-info-lookup-symbol)
+;;    ("<f2> u" . counsel-unicode-char))
+;;   ;;:bind (:map minibuffer-local-map ("C-r" . counsel-minibuffer-history))
+;;   )
 
+;; replaced with vertico history sort!
 ;; alternative M-x with history and sorting
 ;; it's not really editorish, but ivy needs to be loaded first
 ;; https://github.com/DarwinAwardWinner/amx
-(use-package amx
+;; (use-package amx
+;;   :config
+;;   (setq-default amx-save-file (expand-file-name "amx-history" savefile-dir))
+;;   (amx-mode))
+
+(message "done crux")
+;; replace ivy with vertico. It does one thing well rather than replacing all of the commands
+(use-package vertico
+  :init (vertico-mode)
   :config
-  (setq-default amx-save-file (expand-file-name "amx-history" savefile-dir))
-  (amx-mode))
+  (setq vertico-cycle t)
+  ;; why would we sort by length?
+  (setq vertico-sort-function 'vertico-sort-history-alpha)
+  ;; this is ivy's S-SPC
+  (defun +vertico-restrict-to-matches ()
+    (interactive)
+    (let ((inhibit-read-only t))
+      (goto-char (point-max))
+      (insert " ")
+      (add-text-properties (minibuffer-prompt-end) (point-max)
+                           '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
+  :bind (:map vertico-map
+              ("S-SPC" . +vertico-restrict-to-matches)))
 
-;; visual feedback on search and replace
-;; https://github.com/emacsorphanage/anzu
-(use-package anzu
-  :init
-  (global-anzu-mode)
+;; Configure directory extension.
+(use-package vertico-directory
+  :straight nil
+  :after vertico
+  ;; More convenient directory navigation commands
+  :bind (:map vertico-map
+              ("RET" . vertico-directory-enter)
+              ("DEL" . vertico-directory-delete-char)
+              ("M-DEL" . vertico-directory-delete-word))
+  ;; Tidy shadowed file names
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+
+;; this is probably not necessary since I figured out how to set the default sort
+;; (use-package vertico-multiform
+;;   :straight nil
+;;   :after vertico
+;;   :config
+;;   ;; Configure the default sorting function for symbols and files
+;;   ;; See `vertico-sort-function'.
+;;   (setq vertico-multiform-categories
+;;         '((symbol (vertico-sort-function . vertico-sort-alpha))
+;;           (command (vertico-sort-function . vertico-sort-history-alpha))
+;;           (file (vertico-sort-function . sort-directories-first))))
+
+;;   (defun sort-directories-first (files)
+;;     ;; Still sort by history position and alphabetically
+;;     (setq files (vertico-sort-history-alpha files))
+;;     ;; But then move directories first
+;;     (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
+;;            (seq-remove (lambda (x) (string-suffix-p "/" x)) files)))
+;;   (vertico-multiform-mode))
+
+;; idk, sometimes I'm coming back to the frame from elsewhere and there's completion going on so I click on shit
+(use-package vertico-mouse
+  :straight nil
+  :after vertico
+  :config
+  (vertico-mouse-mode))
+
+;; this is a bit like ivy's ivy-resume. Note it saves its history between sessions with savehist above
+(use-package vertico-repeat
+  :straight nil
+  :after vertico
+  :hook (minibuffer-setup . vertico-repeat-save)
+  :bind ("<f6>" . vertico-repeat))
+
+;; Allow searches to match space separated keywords in any order (as regexes)
+(use-package orderless
+  :demand t
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles basic partial-completion)))))
+
+;; various searching commands
+(use-package consult
   :bind
-  (("M-%" . anzu-query-replace)
-   ("C-M-%" . anzu-query-replace-regexp)))
+  (("M-i" . consult-imenu)
+   ("C-." . consult-imenu-multi)
+   ("C-x b" . consult-buffer)
+   ("C-c b" . consult-project-buffer)
+   ("M-y" . consult-yank-replace)
+   ("C-c f" . consult-recent-file)
+   ("C-s" . consult-line)))
 
-;; Jump to a definition in any open buffer
-;; https://github.com/vspinu/imenu-anywhere
-(use-package imenu-anywhere
-  :bind ("C-." . ivy-imenu-anywhere))
+;; add help information to the completion results in the minibuffer
+;; https://github.com/minad/marginalia
+(use-package marginalia
+  :init
+  (marginalia-mode)
+  :bind (:map minibuffer-local-map
+              ("M-A" . marginalia-cycle)))
+
+;; cuz it's awesome. Used by consult, so we don't config here
+;; https://github.com/nlamirault/ripgrep.el
+(use-package ripgrep)
+
+;; allow us to edit a grep buffer
+;; https://github.com/mhayashi1120/Emacs-wgrep
+;; How to use: consult-ripgrep -> embark-consult / embark-export -> change grep buffer to wgrep C-c C-p -> edit lines -> C-x s apply changes and save all buffers
+(use-package wgrep
+  :config
+  (setq wgrep-auto-save-buffer t))
+
+;; do stuff from where we are. Config lifted straight from
+;; https://github.com/oantolin/embark
+(use-package embark
+  :bind
+  (("C-." . embark-act)         ;; pick some comfortable binding
+   ("C-;" . embark-dwim)        ;; good alternative: M-.
+   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+
+  :init
+  ;; Optionally replace the key help with a completing-read interface
+  (setq prefix-help-command #'embark-prefix-help-command)
+
+  :config
+  ;; Hide the mode line of the Embark live/completions buffers
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+
+;; Consult users will also want the embark-consult package.
+(use-package embark-consult
+  :after (embark consult)
+  :demand t ; only necessary if you have the hook below
+  ;; if you want to have consult previews as you move around an
+  ;; auto-updating embark collect buffer
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+
+;; better help
+(use-package helpful
+  :bind
+  ("C-h f" . helpful-callable)
+  ("C-h v" . helpful-variable)
+  ("C-h k" . helpful-key))
 
 ;; smartparens. use it more
 (use-package smartparens
-  :commands (sp-wrap-with-pair)
+  :demand t
   :init
   (require 'smartparens-config)
   :config
@@ -403,7 +544,14 @@
   :bind
   (("M-(" . sp-wrap-round)
    ("M-\"" . (lambda (&optional arg) (interactive "P") (sp-wrap-with-pair "\"")))
-   ("M-{" . (lambda (&optional arg) (interactive "P") (sp-wrap-with-pair "{")))))
+   ("M-{" . sp-wrap-curly)
+   ("C-s-k" . sp-kill-hybrid-sexp)))
+
+(use-package multiple-cursors
+  :bind
+  (("C->" . mc/mark-next-like-this)
+   ("C-<" . mc/mark-previous-like-this)
+   ("C-c C->" . mc/mark-all-like-this)))
 
 (use-package magit
   :config
@@ -423,7 +571,7 @@
    ("l" . magit-log-buffer-file)
    ("b" . magit-blame)))
 
-;; add the git diff to highlights to the gutter
+;; add the git diff highlights to the gutter
 ;; https://github.com/dgutov/diff-hl
 (use-package diff-hl
   :config
@@ -432,7 +580,226 @@
   (dired-mode . diff-hl-dired-mode)
   (magit-post-refresh . diff-hl-magit-post-refresh))
 
+;; Projects with projectile (although maybe we should switch to built-in project.el)
 (use-package projectile
   :init (projectile-mode t)
+  :bind (:map projectile-mode-map
+              ("C-c p" . projectile-command-map)
+              :map projectile-command-map
+              ;; consult ripgrep obeys project setting, and it's nicer than the default projectile command
+              ("s r" . consult-ripgrep))
+  ;; TODO: make sure this is a git repo before running magit-status and default to something else otherwise
+  :custom (projectile-switch-project-action 'magit-status))
+
+;; Switch env vars when you navigate to a .envrc project
+(use-package direnv
   :config
-  (setq projectile-cache-file (expand-file-name  "projectile.cache" savefile-dir)))
+  (direnv-mode))
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Actually edit text ;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Move a line or region up and down
+;; https://github.com/emacsfodder/move-text
+(use-package move-text
+  :bind (([C-S-up] . move-text-up)
+         ([C-S-down] . move-text-down)))
+
+;; visual, more powerful zap-to-char
+;; https://github.com/thierryvolpiatto/zop-to-char
+(use-package zop-to-char
+  :bind
+  ([remap zap-to-char] . zop-to-char))
+
+;; visual feedback on search and replace
+;; https://github.com/emacsorphanage/anzu
+(use-package anzu
+  :init
+  (global-anzu-mode)
+  :bind
+  (("M-%" . anzu-query-replace)
+   ("C-M-%" . anzu-query-replace-regexp)))
+
+;; editing lisp sorta sucks without this
+(use-package rainbow-delimiters
+  :hook ((prog-mode org-mode) . rainbow-delimiters-mode))
+
+;; full angry-fruit-salad mode. Maybe I should try prism again, as I'm not sure this is valuable enough to add this much chaos
+(use-package rainbow-identifiers
+  :hook (prog-mode . rainbow-identifiers-mode))
+
+;; prism colors by code nesting depth
+;; Tried this, didn't love the way it handles comments-I think they should always be the same color, not just desaturated at the level they appear.
+;; (use-package prism
+  ;; you need different modes for whitespace delimited languages
+  ;; :hook ((elisp-mode ruby-ts-mode) . prism-mode))
+
+;;;;;;;;;;;;;;;;;
+;; Programming ;;
+;;;;;;;;;;;;;;;;;
+
+;; flycheck mode to highlight warnings and errors in code
+;; https://www.flycheck.org/en/latest
+(use-package flycheck
+  :init (global-flycheck-mode))
+
+;; get the treesit goodness without specifying grammar download locations or major mode translations
+;; REMEMBER that hooks don't transfer to the ts mode
+(use-package treesit-auto
+  :demand t
+  :config
+  (setq treesit-auto-install 'prompt)
+  (global-treesit-auto-mode))
+
+(use-package combobulate
+  :preface
+  ;; You can customize Combobulate's key prefix here.
+  ;; Note that you may have to restart Emacs for this to take effect!
+  (setq combobulate-key-prefix "C-c o")
+
+  ;; Optional, but recommended.
+  ;;
+  ;; You can manually enable Combobulate with `M-x
+  ;; combobulate-mode'.
+  :hook ((python-ts-mode . combobulate-mode)
+         (js-ts-mode . combobulate-mode)
+         (css-ts-mode . combobulate-mode)
+         (yaml-ts-mode . combobulate-mode)
+         (json-ts-mode . combobulate-mode)
+         (typescript-ts-mode . combobulate-mode)
+         (tsx-ts-mode . combobulate-mode)))
+
+;; markdown mode
+(use-package markdown-mode
+  :ensure-system-package pandoc
+  :commands gfm-mode
+  :mode (("\\.md$" . gfm-mode))
+  :config
+  (custom-set-faces
+   '(markdown-pre-face ((t nil))))
+
+  (setq markdown-command "pandoc --standalone --mathjax --from=gfm"
+        markdown-disable-tooltip-prompt t
+        markdown-fontify-code-blocks-natively t))
+
+;; this is built in, but not associated with .yml files
+(use-package yaml-ts-mode
+  :mode (("\\.yml" . yaml-ts-mode)
+         ("\\.yaml" . yaml-ts-mode)))
+
+;;;;;;;;;;
+;; Ruby ;;
+;;;;;;;;;;
+;; web mode to deal with templates and regular html
+;; https://web-mode.org/
+(use-package web-mode
+  :mode ("\\.erb$"
+         "\\.html$"
+         "\\.php$"
+         "\\.rhtml$")
+
+  :config
+  (setq web-mode-markup-indent-offset 2
+        web-mode-css-indent-offset 2
+        web-mode-code-indent-offset 2
+        web-mode-indent-style 2))
+
+;; config here is from HRS with a few changes
+;; https://github.com/pezra/rspec-mode/
+(use-package rspec-mode
+  :after ruby-mode
+  :ensure-system-package (rspec . "gem install rspec")
+
+  :hook (css-mode
+         deadgrep-mode
+         js-mode
+         magit-status-mode
+         ruby-base-mode
+         scss-mode
+         web-mode
+         yard-mode)
+
+  :custom
+  ;; (compilation-scroll-output nil)
+  (rspec-command-options "--color"))
+
+;; standard test mode keybindings, not as featureful as rspec-mode
+;; https://github.com/arthurnn/minitest-emacs
+(use-package minitest
+  :config (setq minitest-use-rails t)
+  :hook (ruby-base-mode . minitest-mode))
+
+;; only activate rspec-mode or minitest-mode depending on the project I'm working in
+;; lifted from HRS here: https://github.com/hrs/dotfiles/blob/main/emacs/.config/emacs/configuration.org#ruby
+(defvar +ruby-testable-mode-hooks
+  '(css-mode-hook
+    deadgrep-mode-hook
+    js-mode-hook
+    magit-status-mode-hook
+    ruby-base-mode-hook
+    scss-mode-hook
+    web-mode-hook
+    yard-mode-hook))
+
+(defun +current-project-uses-minitest-p ()
+  (and (project-current)
+       (file-directory-p (expand-file-name "test" (project-root (project-current))))))
+
+(defun +activate-ruby-tests-mode ()
+  (if (+current-project-uses-minitest-p)
+      (progn
+        (minitest-mode 1)
+        (rspec-mode 0)
+        (rspec-verifiable-mode 0))
+      (progn
+        (minitest-mode 0)
+        (rspec-mode 1)
+        (rspec-verifiable-mode 1))))
+
+(dolist (hook +ruby-testable-mode-hooks)
+  (add-hook hook #'+activate-ruby-tests-mode))
+
+;; give me an interactive shell if we hit a breakpoint
+(use-package inf-ruby
+  :straight nil
+  :config
+  (inf-ruby-enable-auto-breakpoint)
+  :hook (ruby-base-mode . inf-ruby-minor-mode))
+
+;; projectile-rails so I theoretically never need to use the terminal
+;; https://github.com/asok/projectile-rails
+(use-package projectile-rails
+  :config
+  (projectile-rails-global-mode)
+  :bind (:map projectile-rails-mode-map ("C-c r" . projectile-rails-command-map)))
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(safe-local-variable-values
+   '((flycheck-checker . ruby-standardrb))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+
+;; (defun set-exec-path-from-shell-PATH ()
+;;   "Set up Emacs' `exec-path' and PATH environment variable to match
+;; that used by the user's shell.
+
+;; This is particularly useful under Mac OS X and macOS, where GUI
+;; apps are not started from a shell."
+;;   (interactive)
+;;   (let ((path-from-shell (replace-regexp-in-string
+;; 			  "[ \t\n]*$" "" (shell-command-to-string
+;; 					  "$SHELL --login -c 'echo $PATH'"
+;; 						    ))))
+;;     (setenv "PATH" path-from-shell)
+;;     (setq exec-path (split-string path-from-shell path-separator))))
+
+;; (set-exec-path-from-shell-PATH)
