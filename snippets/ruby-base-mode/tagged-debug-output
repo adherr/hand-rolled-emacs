@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: tagged debug output
+# contributor: Andrew
+# key: dbg
+# --
+puts("### $1: #{$1}")

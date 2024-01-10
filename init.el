@@ -176,8 +176,8 @@
   ;; hippie-expand some things
   (setq hippie-expand-try-functions-list '(try-expand-dabbrev
                                            try-expand-dabbrev-all-buffers
+                                           yas-hippie-try-expand
                                            try-expand-dabbrev-from-kill
-                                           ;; yas-hippie-try-expand
                                            try-complete-file-name-partially
                                            try-complete-file-name
                                            try-expand-all-abbrevs
@@ -609,7 +609,12 @@
    ("j" . magit-dispatch)
    ("k" . magit-file-dispatch)
    ("l" . magit-log-buffer-file)
+   ("t" . git-timemachine)
    ("b" . magit-blame)))
+
+;; browse old versions of a file
+;; https://codeberg.org/pidu/git-timemachine
+(use-package git-timemachine)
 
 ;; add the git diff highlights to the gutter
 ;; https://github.com/dgutov/diff-hl
@@ -654,6 +659,19 @@
 (use-package direnv
   :config
   (direnv-mode))
+
+;; treemacs for that file browser goodness
+;; https://github.com/Alexander-Miller/treemacs
+(use-package treemacs
+  :config
+  (setq treemacs-width 65)
+  (defun treemacs-exclusive-show ()
+    (interactive)
+    (treemacs-display-current-project-exclusively)
+    (treemacs-select-window))
+  :bind
+  (("<f8>" . treemacs)
+   ("<f9>" . treemacs-exclusive-show)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Actually edit text ;;
@@ -700,25 +718,21 @@
   ;; you need different modes for whitespace delimited languages
   ;; :hook ((elisp-mode ruby-ts-mode) . prism-mode))
 
-;; treemacs for that file browser goodness
-;; https://github.com/Alexander-Miller/treemacs
-(use-package treemacs
-  :config
-  (setq treemacs-width 65)
-  (defun treemacs-exclusive-show ()
-    (interactive)
-    (treemacs-display-current-project-exclusively)
-    (treemacs-select-window))
-  :bind
-  (("<f8>" . treemacs)
-   ("<f9>" . treemacs-exclusive-show)))
-
 ;; ligatures, for fun
 ;; https://github.com/jming422/fira-code-mode
 (use-package fira-code-mode
   :config
   ;; (fira-code-mode-install-fonts) ;; this prompts every time :(
   (global-fira-code-mode))
+
+;; snippets! LSP wants this and I want to make a logging snippet
+;; https://jdhao.github.io/2021/10/06/yasnippet_setup_emacs/
+;; https://github.com/joaotavora/yasnippet
+(use-package yasnippet
+  :config
+  (setq yas-indent-line 'auto)
+  (yas-global-mode 1))
+(use-package yasnippet-snippets)
 
 ;;;;;;;;;;;;;;;;;
 ;; Programming ;;
@@ -992,7 +1006,8 @@
   (unbind-key "M-." js-ts-mode-map)
   :mode
   (("\\.tsx\\'" . tsx-ts-mode)
-   ("\\.jsx\\'" . tsx-ts-mode)))
+   ("\\.jsx\\'" . tsx-ts-mode)
+   ("\\.js\\'" . typescript-ts-mode)))
 
 ;; I couldn't make it work, and the keybindings are in all the wrong places
 ;; (use-package jest-test-mode
