@@ -3,9 +3,19 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        crux-kill-whole-line
+        crux-move-beginning-of-line
+        crux-smart-open-line
+        crux-smart-open-line-above
+        easy-kill
+        kill-region
+        sp-backward-sexp
+        sp-forward-sexp
         ))
 
 (setq mc/cmds-to-run-once
       '(
+        indent-for-tab-command
+        mouse-set-region
         sp-splice-sexp
         ))

@@ -128,17 +128,12 @@
   (setq tramp-default-method "ssh")
 
   ;; compilation settings
-  ;; https://stackoverflow.com/a/63710493/4534357
-  ;; https://github.com/atomontage/xterm-color#compilation-buffers
-  (use-package xterm-color)
+  ;; https://stackoverflow.com/a/71785402
   (setq compilation-ask-about-save nil  ; Just save before compiling
         compilation-always-kill t       ; Just kill old compile processes before starting the new one
-        compilation-scroll-output 'first-error ; Automatically scroll to first error
-        compilation-environment '("TERM=xterm-256color")
-        )
-  (defun my/advice-compilation-filter (f proc string)
-    (funcall f proc (xterm-color-filter string)))
-  (advice-add 'compilation-filter :around #'my/advice-compilation-filter)  ;; colorize compilation buffer
+        compilation-scroll-output 'first-error) ; Automatically scroll to first error
+  (use-package ansi-color
+    :hook (compilation-filter . ansi-color-compilation-filter))
 
   ;;; advice for find-file to open at line-number using <filename>:<line-number> format
   ;; from https://www.emacswiki.org/emacs/find-file-with-line-number
@@ -310,7 +305,11 @@
   :config
   (which-key-mode))
 
-      ;;; EDITORish things vvv
+;; let's vterm for getting a terminal in emacs
+;; https://github.com/akermu/emacs-libvterm
+(use-package vterm)
+
+;;; EDITORish things vvv
 
 ;; undo-tree
 ;; https://gitlab.com/tsc25/undo-tree
@@ -533,7 +532,9 @@
   :bind
   (("C-." . embark-act)         ;; pick some comfortable binding
    ("C-;" . embark-dwim)        ;; good alternative: M-.
-   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+   ("C-h B" . embark-bindings)  ;; alternative for `describe-bindings'
+   (:map embark-become-file+buffer-map ("p" . projectile-find-file)))
+
 
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -610,11 +611,19 @@
    ("k" . magit-file-dispatch)
    ("l" . magit-log-buffer-file)
    ("t" . git-timemachine)
+   ("h" . git-link)
    ("b" . magit-blame)))
 
 ;; browse old versions of a file
 ;; https://codeberg.org/pidu/git-timemachine
 (use-package git-timemachine)
+
+;; I like to paste working github links into slack
+;; https://github.com/sshaw/git-link
+(use-package git-link
+  :commands git-link
+  :custom
+  (git-link-default-branch "main"))
 
 ;; add the git diff highlights to the gutter
 ;; https://github.com/dgutov/diff-hl
@@ -837,13 +846,6 @@
 ;; https://github.com/sebastiencs/company-box
 (use-package company-box
   :hook (company-mode . company-box-mode))
-
-;; I like to paste working github links into slack
-;; https://github.com/sshaw/git-link
-(use-package git-link
-  :commands git-link
-  :custom
-  (git-link-default-branch "main"))
 
 ;;;;;;;;; Languages
 

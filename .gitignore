@@ -3,3 +3,6 @@
 /savefile/
 /auto-save-list/
 /tree-sitter/
+/.cache/
+/.lsp-session-v1
+/elpa/
