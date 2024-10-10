@@ -193,22 +193,23 @@
   (setq require-final-newline t) ;; Newline at end of file
   (delete-selection-mode t) ;; delete the selection with a keypress
   ;; hippie-expand some things
-  (setq hippie-expand-try-functions-list '(try-expand-dabbrev
-                                           try-expand-dabbrev-all-buffers
-                                           yas-hippie-try-expand
-                                           try-expand-dabbrev-from-kill
-                                           try-complete-file-name-partially
-                                           try-complete-file-name
-                                           try-expand-all-abbrevs
-                                           try-expand-list
-                                           try-expand-line
-                                           try-complete-lisp-symbol-partially
-                                           try-complete-lisp-symbol))
-  (setq tab-always-indent 'complete) ;; works with hippie-expand to complete if already indented. QUESTIONABLE
+  ;; (setq hippie-expand-try-functions-list '(try-expand-dabbrev
+  ;;                                          try-expand-dabbrev-all-buffers
+  ;;                                          yas-hippie-try-expand
+  ;;                                          try-expand-dabbrev-from-kill
+  ;;                                          try-complete-file-name-partially
+  ;;                                          try-complete-file-name
+  ;;                                          try-expand-all-abbrevs
+  ;;                                          try-expand-list
+  ;;                                          try-expand-line
+  ;;                                          try-complete-lisp-symbol-partially
+  ;;                                          try-complete-lisp-symbol))
+  (setq tab-always-indent 'complete) ;; trigger corfu if already indented
   (setq blink-matching-paren nil) ;; disable annoying blink-matching-paren
   ;; ispell
   (setq ispell-program-name "aspell" ; use aspell instead of ispell
         ispell-extra-args '("--sug-mode=ultra"))
+  (setq text-mode-ispell-word-completion nil)
   (flyspell-mode +1)
   ;; highlight the current line
   (global-hl-line-mode +1)
@@ -250,7 +251,8 @@
 
 
   :bind
-  (("M-/" . hippie-expand)
+  (
+   ;; ("M-/" . hippie-expand) ;; replaced with dabbrev expand and corfu
    ("C-x O" . (lambda () (interactive)
                 (other-window -1)))
    ("s-[" . (lambda () (interactive) (insert-char #x201c)))
@@ -614,6 +616,78 @@
   ("C-h v" . helpful-variable)
   ("C-h k" . helpful-key))
 
+;; company to complete anywhere
+;; (use-package company
+;;   :hook (prog-mode . company-mode)
+;;   :bind (:map company-active-map
+;;               ("<tab>" . company-complete-selection))
+
+;;   :custom
+;;   (company-backends '((company-capf company-dabbrev-code)))
+;;   (company-idle-delay 0.2)
+;;   (company-minimum-prefix-length 3)
+;;   (company-tooltip-align-annotations t)
+;;   (company-tooltip-limit 20)
+
+;;   :config
+;;   (setq lsp-completion-provider :capf))
+
+;; ;; a new frontend that's hopefully better. suggested by lsp-mode
+;; ;; https://github.com/sebastiencs/company-box
+;; (use-package company-box
+;;   :hook (company-mode . company-box-mode))
+
+;; completion at point with a popup
+;; https://github.com/minad/corfu
+(use-package corfu
+  :init (global-corfu-mode)
+  :custom
+  (corfu-auto t)
+  (corfu-auto-delay 1)
+  (corfu-cycle t)
+  (cofu-quit-no-match t)
+  (corfu-preselect 'valid))
+
+;; https://github.com/rainstormstudio/nerd-icons.el
+(use-package nerd-icons)
+;; icons for corfu, cuz it's important
+;; https://github.com/LuigiPiucco/nerd-icons-corfu
+(use-package nerd-icons-corfu
+  :config (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
+;; dired too
+;; https://github.com/rainstormstudio/nerd-icons-dired
+(use-package nerd-icons-dired
+  :hook
+  (dired-mode . nerd-icons-dired-mode))
+;; treemacs is better with default icons, although they probably don't work in console 🤷
+;; https://github.com/rainstormstudio/treemacs-nerd-icons
+;; (use-package treemacs-nerd-icons
+;;   :config
+;;   (treemacs-load-theme "nerd-icons"))
+
+;; add more completion at point functions
+;; https://github.com/minad/cape
+(use-package cape
+  :init
+  (add-hook 'completion-at-point-functions #'cape-dabbrev)
+  (add-hook 'completion-at-point-functions #'cape-file)
+  (add-hook 'completion-at-point-functions #'cape-emoji)
+  (add-hook 'completion-at-point-functions #'cape-dict)
+  (add-hook 'prog-mode-hook
+              (lambda ()
+                (add-hook 'completion-at-point-functions
+                          #'cape-keyword nil t))))
+
+;; Use Dabbrev with Corfu!
+(use-package dabbrev
+  ;; Swap M-/ and C-M-/
+  ;; :bind (("M-/" . dabbrev-completion)
+         ;; ("C-M-/" . dabbrev-expand))
+  :config
+  (add-to-list 'dabbrev-ignored-buffer-modes 'doc-view-mode)
+  (add-to-list 'dabbrev-ignored-buffer-modes 'pdf-view-mode)
+  (add-to-list 'dabbrev-ignored-buffer-modes 'tags-table-mode))
+
 (use-package multiple-cursors
   :bind
   (("C->" . mc/mark-next-like-this)
@@ -792,26 +866,43 @@
   :commands (lsp lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l")
-  (setq lsp-enabled-clients '(sorbet-ls my-rubocop-ls graphql-lsp ts-ls eslint))
+  ;; orderless completion setup from https://github.com/minad/corfu/wiki#advanced-example-configuration-with-orderless
+  (defun my/orderless-dispatch-flex-first (_pattern index _total)
+    (and (eq index 0) 'orderless-flex))
+
+  (defun my/lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(orderless))
+    ;; configure the first word as flex filtered.
+    (add-hook 'orderless-style-dispatchers #'my/orderless-dispatch-flex-first nil 'local)
+    ;; configure the cape-capf-buster.
+    (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point))))
+
+
+  (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
+  ;; (setq lsp-enabled-clients '(sorbet-ls ruby-lsp-ls graphql-lsp ts-ls eslint))
   :config
   ;; these are emacs settings for lsp performance
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
   (setq gc-cons-threshold 100000000) ;; 100mib
 
   (lsp-register-client
-     (make-lsp-client :new-connection (lsp-stdio-connection '("/Users/andrew.herr/workspace/zenpayroll/bin/rubocop" "--lsp"))
+     (make-lsp-client :new-connection (lsp-stdio-connection '("bundle" "exec" "rubocop" "--lsp"))
                       :activation-fn (lsp-activate-on "ruby")
                       :add-on? t
                       :server-id 'my-rubocop-ls))
   (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]tmp\\'")
   :custom
-  (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-2.4.2/server/out/eslintServer.js" "--stdio"))
-  (lsp-eslint-lint-task-options "-c /Users/andrew.herr/workspace/zenparoll/.eslintrc.js")
+  (lsp-completion-provider :none) ;; corfu
+  (lsp-sorbet-as-add-on t)
+  (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-/server/out/eslintServer.js" "--stdio"))
   :hook (((graphql-mode js-base-mode ruby-base-mode typescript-ts-base-mode) . lsp-deferred)
          ;; if you want which-key integration
-         (lsp-mode . lsp-enable-which-key-integration)))
+         (lsp-mode . lsp-enable-which-key-integration)
+         (lsp-completion-mode . my/lsp-mode-setup-completion)))
 
-(use-package lsp-treemacs)
+;; (use-package lsp-treemacs)
+;; (use-package lsp-ui)
 
 ;; GH CoPilot??
 ;; https://github.com/zerolfx/copilot.el
@@ -855,27 +946,6 @@
 (use-package subword
   :straight nil
   :config (global-subword-mode 1))
-
-;; company to complete anywhere
-(use-package company
-  :hook (prog-mode . company-mode)
-  :bind (:map company-active-map
-              ("<tab>" . company-complete-selection))
-
-  :custom
-  (company-backends '((company-capf company-dabbrev-code)))
-  (company-idle-delay 0.2)
-  (company-minimum-prefix-length 3)
-  (company-tooltip-align-annotations t)
-  (company-tooltip-limit 20)
-
-  :config
-  (setq lsp-completion-provider :capf))
-
-;; a new frontend that's hopefully better. suggested by lsp-mode
-;; https://github.com/sebastiencs/company-box
-(use-package company-box
-  :hook (company-mode . company-box-mode))
 
 ;;;;;;;;; Languages
 
