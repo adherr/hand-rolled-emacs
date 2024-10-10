@@ -43,7 +43,10 @@
                                            (mapconcat (lambda (path) (car (file-expand-wildcards path)))
                                                       '("/usr/local/opt/gcc/lib/gcc/*"
                                                         "/usr/local/opt/libgccjit/lib/gcc/*"
-                                                        "/usr/local/opt/gcc/lib/gcc/*/gcc/*/*")
+                                                        "/usr/local/opt/gcc/lib/gcc/*/gcc/*/*"
+                                                        "/opt/homebrew/opt/gcc/lib/gcc/*"
+                                                        "/opt/homebrew/opt/libgccjit/lib/gcc/*"
+                                                        "/opt/homebrew/opt/gcc/lib/gcc/*/gcc/*/*")
                                                       ":")))))
         ;; Only set after LIBRARY_PATH can find gcc libraries.
         (setq comp-deferred-compilation t))
