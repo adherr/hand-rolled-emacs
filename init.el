@@ -770,6 +770,10 @@
   (setq lsp-keymap-prefix "C-c l")
   (setq lsp-enabled-clients '(sorbet-ls my-rubocop-ls graphql-lsp ts-ls eslint))
   :config
+  ;; these are emacs settings for lsp performance
+  (setq read-process-output-max (* 1024 1024)) ;; 1mb
+  (setq gc-cons-threshold 100000000) ;; 100mib
+
   (lsp-register-client
      (make-lsp-client :new-connection (lsp-stdio-connection '("/Users/andrew.herr/workspace/zenpayroll/bin/rubocop" "--lsp"))
                       :activation-fn (lsp-activate-on "ruby")
