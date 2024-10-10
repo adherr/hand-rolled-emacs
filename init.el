@@ -25,7 +25,31 @@
 ;; load my path
 ;; https://github.com/purcell/exec-path-from-shell
 (use-package exec-path-from-shell
-  :config (exec-path-from-shell-initialize))
+  :config
+  (exec-path-from-shell-initialize)
+  (if (and (fboundp 'native-comp-available-p)
+           (native-comp-available-p))
+      (progn
+        (message "Native comp is available")
+        (when (eq system-type 'darwin)
+          (progn
+            ;; bin inside the Emacs.app
+            (add-to-list 'exec-path (concat invocation-directory "bin") t)
+            ;; this is a combination of https://xenodium.com/trying-out-gccemacs-on-macos/
+            ;; and stuff from this thread https://github.com/d12frosted/homebrew-emacs-plus/issues/378#issuecomment-1666548762
+            (setenv "LIBRARY_PATH" (concat (getenv "LIBRARY_PATH")
+                                           (when (getenv "LIBRARY_PATH")
+                                             ":")
+                                           (mapconcat (lambda (path) (car (file-expand-wildcards path)))
+                                                      '("/usr/local/opt/gcc/lib/gcc/*"
+                                                        "/usr/local/opt/libgccjit/lib/gcc/*"
+                                                        "/usr/local/opt/gcc/lib/gcc/*/gcc/*/*")
+                                                      ":")))))
+        ;; Only set after LIBRARY_PATH can find gcc libraries.
+        (setq comp-deferred-compilation t))
+    (message "Native comp is *not* available"))
+  (dolist (var '("LANG" "LC_CTYPE" "LIBRARY_PATH" "LSP_USE_PLISTS"))
+    (add-to-list 'exec-path-from-shell-variables var)))
 
 (defvar line-length 120)
 ;; base Emacs config
