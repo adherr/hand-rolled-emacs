@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -11,8 +12,7 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-;; Install use-package
-(straight-use-package 'use-package)
+;; Configure use-package (now built in)
 (use-package use-package
   :config (setq use-package-always-demand t))
 
@@ -232,7 +232,9 @@
    ("s-[" . (lambda () (interactive) (insert-char #x201c)))
    ("s-{" . (lambda () (interactive) (insert-char #x201d)))
    ("s-]" . (lambda () (interactive) (insert-char #x2018)))
-   ("s-}" . (lambda () (interactive) (insert-char #x2019))))
+   ("s-}" . (lambda () (interactive) (insert-char #x2019)))
+   ("<M-down-mouse-1>" . browse-url-at-mouse)
+   )
 
   ;; go to definition help functions
   (:map help-map
