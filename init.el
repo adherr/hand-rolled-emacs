@@ -67,6 +67,8 @@
   (setq initial-scratch-message "")
   ;; Get back that column
   (scroll-bar-mode -1)
+  ;; I'll take the lines too
+  (menu-bar-mode -1)
   ;; y or n instead of typing
   (fset 'yes-or-no-p 'y-or-n-p)
   ;; flash the modeline instead of bell (not sure I need this)
@@ -191,6 +193,7 @@
       res))
 
   ;; Editorish things
+  (set-frame-font "BlexMono Nerd Font JBM Ligatured CCG 9" nil t)
   (setq-default indent-tabs-mode nil) ;; don't use tabs to indent
   (setq-default tab-width 8) ;; but maintain correct appearance
   (setq require-final-newline t) ;; Newline at end of file
@@ -263,7 +266,7 @@
    ("s-]" . (lambda () (interactive) (insert-char #x2018)))
    ("s-}" . (lambda () (interactive) (insert-char #x2019)))
    ("<M-down-mouse-1>" . browse-url-at-mouse)
-   )
+   ("s-u" . revert-buffer))
 
   ;; go to definition help functions
   (:map help-map
@@ -323,7 +326,8 @@
   (("M-(" . sp-wrap-round)
    ("M-\"" . (lambda (&optional arg) (interactive "P") (sp-wrap-with-pair "\"")))
    ("M-{" . sp-wrap-curly)
-   ("C-s-k" . sp-kill-hybrid-sexp)))
+   ("C-s-k" . sp-kill-hybrid-sexp)
+   ("C-M-k" . sp-kill-sexp)))
 
 ;; love me some zenburn theme
 (use-package zenburn-theme
@@ -832,10 +836,27 @@
 
 ;; ligatures, for fun
 ;; https://github.com/jming422/fira-code-mode
-(use-package fira-code-mode
+;; (use-package fira-code-mode
+;;   :config
+;;   ;; (fira-code-mode-install-fonts) ;; this prompts every time :(
+;;   (global-fira-code-mode))
+
+(use-package ligature
   :config
-  ;; (fira-code-mode-install-fonts) ;; this prompts every time :(
-  (global-fira-code-mode))
+  (ligature-set-ligatures 't '("--" "---" "==" "===" "!=" "!==" "=!="
+                              "=:=" "=/=" "<=" ">=" "&&" "&&&" "&=" "++" "+++" "***" ";;" "!!"
+                              "??" "???" "?:" "?." "?=" "<:" ":<" ":>" ">:" "<:<" "<>" "<<<" ">>>"
+                              "<<" ">>" "||" "-|" "_|_" "|-" "||-" "|=" "||=" "##" "###" "####"
+                              "#{" "#[" "]#" "#(" "#?" "#_" "#_(" "#:" "#!" "#=" "^=" "<$>" "<$"
+                              "$>" "<+>" "<+" "+>" "<*>" "<*" "*>" "</" "</>" "/>" "<!--" "<#--"
+                              "-->" "->" "->>" "<<-" "<-" "<=<" "=<<" "<<=" "<==" "<=>" "<==>"
+                              "==>" "=>" "=>>" ">=>" ">>=" ">>-" ">-" "-<" "-<<" ">->" "<-<" "<-|"
+                              "<=|" "|=>" "|->" "<->" "<~~" "<~" "<~>" "~~" "~~>" "~>" "~-" "-~"
+                              "~@" "[||]" "|]" "[|" "|}" "{|" "[<" ">]" "|>" "<|" "||>" "<||"
+                              "|||>" "<|||" "<|>" "..." ".." ".=" "..<" ".?" "::" ":::" ":=" "::="
+                              ":?" ":?>" "//" "///" "/*" "*/" "/=" "//=" "/==" "@_" "__" "???"
+                              "<:<" ";;;"))
+  (global-ligature-mode t))
 
 ;; snippets! LSP wants this and I want to make a logging snippet
 ;; https://jdhao.github.io/2021/10/06/yasnippet_setup_emacs/
@@ -882,7 +903,7 @@
     (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point))))
 
 
-  (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
+  (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint elixir-ls))
   ;; (setq lsp-enabled-clients '(sorbet-ls ruby-lsp-ls graphql-lsp ts-ls eslint))
   :config
   ;; these are emacs settings for lsp performance
@@ -898,8 +919,9 @@
   :custom
   (lsp-completion-provider :none) ;; corfu
   (lsp-sorbet-as-add-on t)
-  (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-/server/out/eslintServer.js" "--stdio"))
-  :hook (((graphql-mode js-base-mode ruby-base-mode typescript-ts-base-mode) . lsp-deferred)
+  (lsp-elixir-local-server-command "/usr/lib/elixir-ls/language_server.sh")
+  ;; (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-2.4.2/server/out/eslintServer.js" "--stdio"))
+  :hook (((elixir-ts-mode graphql-mode js-base-mode ruby-base-mode typescript-ts-base-mode) . lsp-deferred)
          ;; if you want which-key integration
          (lsp-mode . lsp-enable-which-key-integration)
          (lsp-completion-mode . my/lsp-mode-setup-completion)))
@@ -1145,3 +1167,22 @@
   :config
   (add-to-list 'prettier-major-mode-parsers '(typescript-ts-base-mode . (typescript babel-ts)))
   (global-prettier-mode))
+
+;;;;;;;;;;;;
+;; Elixir ;;
+;;;;;;;;;;;;
+
+;; just for elixir-format
+(use-package elixir-mode)
+
+;; I think this is what we want?
+(use-package elixir-ts-mode
+  :mode ("\\.ex\\'". elixir-ts-mode))
+
+;;;;;;;;;;;;;;;;
+;; Arch Linux ;;
+;;;;;;;;;;;;;;;;
+
+;; this is a thing? cool.
+;; https://github.com/UndeadKernel/pacfiles-mode
+(use-package pacfiles-mode)

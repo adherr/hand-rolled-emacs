@@ -8,14 +8,18 @@
         crux-smart-open-line
         crux-smart-open-line-above
         easy-kill
+        indent-for-tab-command
         kill-region
         sp-backward-sexp
+        sp-backward-up-sexp
+        sp-down-sexp
         sp-forward-sexp
+        sp-forward-slurp-sexp
         ))
 
 (setq mc/cmds-to-run-once
       '(
-        indent-for-tab-command
-        mouse-set-region
-        sp-splice-sexp
+        beginning-of-buffer
+        crux-find-user-init-file
+        end-of-buffer
         ))
