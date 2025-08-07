@@ -3,23 +3,42 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        backward-kill-sexp
+        consult-yank-replace
+        crux-kill-line-backwards
         crux-kill-whole-line
         crux-move-beginning-of-line
         crux-smart-open-line
         crux-smart-open-line-above
+        dabbrev-expand
         easy-kill
         indent-for-tab-command
         kill-region
+        sp-backward-down-sexp
+        sp-backward-kill-sexp
         sp-backward-sexp
         sp-backward-up-sexp
+        sp-beginning-of-sexp
         sp-down-sexp
+        sp-end-of-sexp
         sp-forward-sexp
         sp-forward-slurp-sexp
+        sp-kill-hybrid-sexp
+        sp-kill-sexp
+        sp-mark-sexp
+        sp-rewrap-sexp
+        sp-splice-sexp
         ))
 
 (setq mc/cmds-to-run-once
       '(
+        ace-window
         beginning-of-buffer
         crux-find-user-init-file
         end-of-buffer
+        find-file
+        mouse-set-region
+        rspec-rerun
+        rspec-verify
+        toggle-debug-on-quit
         ))
