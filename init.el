@@ -468,6 +468,16 @@
   :config
   (setq avy-background t)
   (setq avy-style 'at-full)
+  ;; from https://karthinks.com/software/avy-can-do-anything/#a-division-of-responsibility
+  (defun avy-action-embark (pt)
+    (unwind-protect
+        (save-excursion
+          (goto-char pt)
+          (embark-act))
+      (select-window
+       (cdr (ring-ref avy-ring 0))))
+    t)
+  (setf (alist-get ?. avy-dispatch-alist) 'avy-action-embark)
   :bind
   (("M-g g" . avy-goto-line)
    ("C-c j" . avy-goto-char-timer)))
