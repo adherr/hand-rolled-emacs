@@ -369,10 +369,18 @@
    ("C-M-SPC" . sp-mark-sexp)))
 
 ;; love me some zenburn theme
-(use-package zenburn-theme
-  :straight (:host github :repo "bbatsov/zenburn-emacs")
+;; (use-package zenburn-theme
+;;   :straight (:host github :repo "bbatsov/zenburn-emacs")
+;;   :config
+;;   (load-theme 'zenburn t))
+
+;; Try it out to be like jxpx777
+(use-package base16-theme
+  :straight (:host github :repo "tinted-theming/base16-emacs")
   :config
-  (load-theme 'zenburn t))
+  (setq base16-highlight-mode-line 'contrast)
+  (global-hl-line-mode -1) ;; line highlight doesn't play nice with text colors
+  (load-theme 'base16-tomorrow t))
 
 ;; show all of the completions from the keys entered so far
 (use-package which-key
