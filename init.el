@@ -160,7 +160,8 @@
   ;; https://stackoverflow.com/a/71785402
   (setq compilation-ask-about-save nil  ; Just save before compiling
         compilation-always-kill t       ; Just kill old compile processes before starting the new one
-        compilation-scroll-output 'first-error) ; Automatically scroll to first error
+        compilation-scroll-output 'first-error ; Automatically scroll to first error
+        compilation-max-output-line-length nil) ; Don't hide long lines
   (use-package ansi-color
     :straight nil
     :hook (compilation-filter . ansi-color-compilation-filter))
