@@ -1071,10 +1071,10 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (lsp-signature-auto-activate nil) ;; this momentarily steals focus and triggers auto-save that runs rubocop because of rubocopfmt-mode
   (lsp-sorbet-as-add-on t)
   (lsp-elixir-local-server-command "/usr/lib/elixir-ls/language_server.sh")
-  (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-/server/out/eslintServer.js" "--stdio"))
+  (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-3.0.16/server/out/eslintServer.js" "--stdio"))
   (lsp-copilot-enabled t)
-  (lsp-copilot-version "1.323.0")
-  (lsp-copilot-executable "/Users/c-andrew.herr/bin/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server")
+  (lsp-copilot-version "1.357.0")
+  (lsp-copilot-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server")
   :hook (((graphql-mode js-base-mode ruby-base-mode typescript-ts-base-mode terraform-mode) . lsp-deferred)
          ;; if you want which-key integration
          (lsp-mode . lsp-enable-which-key-integration)
@@ -1084,12 +1084,22 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;; (use-package lsp-ui)
 
 ;; GH CoPilot??
+;; npm install @github/copilot-cli in a convenient location and set the server-executable variable below
+;; since the local project's nodejs version might not be compatible
 ;; https://github.com/copilot-emacs/copilot.el
 (use-package copilot
   :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el"))
-  :ensure t
+  :hook (prog-mode . copilot-mode)
+  :bind
+  (:map copilot-completion-map
+        ("TAB" . copilot-accept-completion)
+        ("RET" . copilot-accept-completion)
+        ("C-c C-c" . copilot-accept-completion)
+        ("C-c C-n" . copilot-next-completion)
+        ("C-c C-p" . copilot-previous-completion)
+        ("C-c C-l" . copilot-clear-overlay))
   :custom
-  (copilot-server-executable "/Users/c-andrew.herr/bin/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server"))
+  (copilot-server-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server"))
 
 ;; flycheck mode to highlight warnings and errors in code
 ;; https://www.flycheck.org/en/latest
