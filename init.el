@@ -1167,6 +1167,10 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :mode ("\\.yml$"
          "\\.yaml$"))
 
+(use-package dockerfile-ts-mode
+  :straight nil
+  :mode ("Dockerfile\\'" . dockerfile-ts-mode))
+
 (use-package csv-mode
   :straight (:host github :repo "emacs-straight/csv-mode")
   :mode ("\\.csv$")
