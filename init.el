@@ -669,6 +669,10 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 
 ;; various searching commands
 (use-package consult
+  :init
+  ;; Use Consult to select xref locations with preview
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
   :config
   (consult-customize
    consult-line
