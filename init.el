@@ -670,6 +670,13 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;; various searching commands
 (use-package consult
   :init
+  ;; Tweak the register preview for `consult-register-load',
+  ;; `consult-register-store' and the built-in commands.  This improves the
+  ;; register formatting, adds thin separator lines, register sorting and hides
+  ;; the window mode line.
+  (advice-add #'register-preview :override #'consult-register-window)
+  (setq register-preview-delay 0.5)
+
   ;; Use Consult to select xref locations with preview
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
@@ -692,7 +699,11 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
    ("M-y" . consult-yank-replace)
    ("s-y" . yank-pop)
    ("C-c f" . consult-recent-file)
-   ("C-s" . consult-line)))
+   ("C-s" . consult-line))
+  ;; Custom M-# bindings for fast register access
+  ("M-#" . consult-register-load)
+  ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+  ("C-M-#" . consult-register))
 
 ;; cuz it's awesome. Used by consult, so we don't config here
 ;; https://github.com/nlamirault/ripgrep.el
