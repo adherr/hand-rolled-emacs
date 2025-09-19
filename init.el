@@ -672,7 +672,14 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :config
   (consult-customize
    consult-line
-   :add-history (seq-some #'thing-at-point '(region symbol)))
+   :add-history (seq-some #'thing-at-point '(region symbol))
+   consult-theme :preview-key '(:debounce 0.2 any)
+   consult-ripgrep consult-git-grep consult-grep consult-man
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-bookmark consult--source-file-register
+   consult--source-recent-file consult--source-project-recent-file
+   ;; :preview-key "M-."
+   :preview-key '(:debounce 0.4 any))
   :bind
   (("M-i" . consult-imenu)
    ;; ("C-." . consult-imenu-multi)

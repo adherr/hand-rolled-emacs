@@ -39,6 +39,7 @@
         crux-find-user-init-file
         end-of-buffer
         find-file
+        magit-status
         mouse-set-region
         rspec-rerun
         rspec-verify
