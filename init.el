@@ -391,6 +391,20 @@
 ;; https://github.com/akermu/emacs-libvterm
 ;; (use-package vterm)
 
+;; a better terminal emulator for emacs?
+;; https://codeberg.org/akib/emacs-eat
+(use-package eat
+ :straight (:type git
+       :host codeberg
+       :repo "akib/emacs-eat"
+       :files ("*.el" ("term" "term/*.el") "*.texi"
+               "*.ti" ("terminfo/e" "terminfo/e/*")
+               ("terminfo/65" "terminfo/65/*")
+               ("integration" "integration/*")
+               (:exclude ".dir-locals.el" "*-tests.el"))))
+
+
+
 ;;; EDITORish things vvv
 
 ;; undo-tree
