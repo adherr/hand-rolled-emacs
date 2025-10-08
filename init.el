@@ -67,6 +67,8 @@
   (setq initial-scratch-message "")
   ;; Get back that column
   (scroll-bar-mode -1)
+  ;; I'll take the lines too
+  (menu-bar-mode -1)
   ;; y or n instead of typing
   (fset 'yes-or-no-p 'y-or-n-p)
   ;; flash the modeline instead of bell (not sure I need this)
@@ -147,7 +149,7 @@
   (setq dired-dwim-target t)
 
   ;; clean up buffers untouched for 3 days automatically
-  (midnight-delay-set 'midnight-delay "4:30am")
+  (midnight-delay-set 'midnight-delay "04:30")
 
   ;; tramp, for sudo access
   ;; keep in mind known issues with zsh - see
@@ -158,9 +160,30 @@
   ;; https://stackoverflow.com/a/71785402
   (setq compilation-ask-about-save nil  ; Just save before compiling
         compilation-always-kill t       ; Just kill old compile processes before starting the new one
-        compilation-scroll-output 'first-error) ; Automatically scroll to first error
+        compilation-scroll-output 'first-error ; Automatically scroll to first error
+        compilation-max-output-line-length nil) ; Don't hide long lines
   (use-package ansi-color
+    :straight nil
     :hook (compilation-filter . ansi-color-compilation-filter))
+
+  (defun +func-region (start end func)
+    "run a function over the region between START and END in current buffer."
+    (save-excursion
+      (let ((text (delete-and-extract-region start end)))
+        (insert (funcall func text)))))
+
+  (use-package url
+    :straight nil
+    :config
+    (defun +hex-region (start end)
+      "urlencode the region between START and END in current buffer."
+      (interactive "r")
+      (+func-region start end #'url-hexify-string))
+
+    (defun +unhex-region (start end)
+      "de-urlencode the region between START and END in current buffer."
+      (interactive "r")
+      (+func-region start end #'url-unhex-string)))
 
   ;;; advice for find-file to open at line-number using <filename>:<line-number> format
   ;; from https://www.emacswiki.org/emacs/find-file-with-line-number
@@ -191,6 +214,7 @@
       res))
 
   ;; Editorish things
+  (set-frame-font "Plex Mono 12" nil t)
   (setq-default indent-tabs-mode nil) ;; don't use tabs to indent
   (setq-default tab-width 8) ;; but maintain correct appearance
   (setq require-final-newline t) ;; Newline at end of file
@@ -221,6 +245,10 @@
   (setq whitespace-style '(face tabs empty trailing)) ;; add lines-tail to highlight the end of long lines when required
   (global-whitespace-mode +1)
 
+  ;; put me on the last copy when I duplicate stuff
+  (setq duplicate-region-final-position -1)
+  (setq duplicate-line-final-position -1)
+
   ;; enable narrowing commands (C-x n ...) HIGHLY QUESTIONABLE
   (put 'narrow-to-region 'disabled nil)
   (put 'narrow-to-page 'disabled nil)
@@ -243,18 +271,28 @@
   (add-hook 'after-save-hook
             'executable-make-buffer-file-executable-if-script-p)
 
+  ;; don't validate XML schemas, because nXML mode only works with RELAX NG schemata, and it seems like a lot of work to set those up
+  ;; https://www.gnu.org/software/emacs/manual/html_mono/nxml-mode.html#Locating-a-schema
+  ;; https://fedoraproject.org/wiki/How_to_use_Emacs_for_XML_editing
+  ;; trang https://relaxng.org/#conversion is available with `brew install jing-trang`
+  ;; sometimes it'll crash emacs trying to validate on save
+  (setq rng-nxml-auto-validate-flag nil)
+
   ;; .zsh file is shell script too
   :mode
-  ("\\.zsh\\'" . shell-script-mode)
-  ("\\.zshrc\\'" . shell-script-mode)
-  ("\\.env\\'" . shell-script-envrc)
-  ("\\.mode\\'" . shell-script-mode)
+  ("\\.zsh$" . shell-script-mode)
+  ("\\.zshrc$" . shell-script-mode)
+  ("\\.env$" . shell-script-mode)
+  ("^.envrc$" . shell-script-mode)
+  ("^.env*" . shell-script-mode)
+  ("Procfile*" . conf-mode)
   ;; ruby mode should include rbi files
   ("\\.rbi\\'" . ruby-ts-mode)
-
+  ("\\.rb\\'" . ruby-ts-mode)
 
   :bind
   (
+   ("C-c d" . duplicate-dwim)
    ;; ("M-/" . hippie-expand) ;; replaced with dabbrev expand and corfu
    ("C-x O" . (lambda () (interactive)
                 (other-window -1)))
@@ -263,7 +301,7 @@
    ("s-]" . (lambda () (interactive) (insert-char #x2018)))
    ("s-}" . (lambda () (interactive) (insert-char #x2019)))
    ("<M-down-mouse-1>" . browse-url-at-mouse)
-   )
+   ("s-u" . revert-buffer))
 
   ;; go to definition help functions
   (:map help-map
@@ -323,13 +361,26 @@
   (("M-(" . sp-wrap-round)
    ("M-\"" . (lambda (&optional arg) (interactive "P") (sp-wrap-with-pair "\"")))
    ("M-{" . sp-wrap-curly)
-   ("C-s-k" . sp-kill-hybrid-sexp)))
+   ("C-s-k" . sp-kill-hybrid-sexp)
+   ("C-s-f" . sp-end-of-sexp)
+   ("C-s-b" . sp-beginning-of-sexp)
+   ("C-M-k" . sp-kill-sexp)
+    ([C-M-backspace] . sp-backward-kill-sexp)
+   ("C-M-SPC" . sp-mark-sexp)))
 
 ;; love me some zenburn theme
-(use-package zenburn-theme
-  :straight (:host github :repo "bbatsov/zenburn-emacs")
+;; (use-package zenburn-theme
+;;   :straight (:host github :repo "bbatsov/zenburn-emacs")
+;;   :config
+;;   (load-theme 'zenburn t))
+
+;; Try it out to be like jxpx777
+(use-package base16-theme
+  :straight (:host github :repo "tinted-theming/base16-emacs")
   :config
-  (load-theme 'zenburn t))
+  (setq base16-highlight-mode-line 'contrast)
+  (global-hl-line-mode -1) ;; line highlight doesn't play nice with text colors
+  (load-theme 'base16-tomorrow t))
 
 ;; show all of the completions from the keys entered so far
 (use-package which-key
@@ -338,7 +389,21 @@
 
 ;; let's vterm for getting a terminal in emacs
 ;; https://github.com/akermu/emacs-libvterm
-(use-package vterm)
+;; (use-package vterm)
+
+;; a better terminal emulator for emacs?
+;; https://codeberg.org/akib/emacs-eat
+(use-package eat
+ :straight (:type git
+       :host codeberg
+       :repo "akib/emacs-eat"
+       :files ("*.el" ("term" "term/*.el") "*.texi"
+               "*.ti" ("terminfo/e" "terminfo/e/*")
+               ("terminfo/65" "terminfo/65/*")
+               ("integration" "integration/*")
+               (:exclude ".dir-locals.el" "*-tests.el"))))
+
+
 
 ;;; EDITORish things vvv
 
@@ -371,7 +436,7 @@
          ("C-c f" . crux-recentf-find-file)
          ("C-M-z" . crux-indent-defun)
          ("C-c D" . crux-delete-file-and-buffer)
-         ("C-c d" . crux-duplicate-current-line-or-region)
+         ;; ("C-c d" . crux-duplicate-current-line-or-region) ;; replaced with builtin duplicate-dwim
          ("C-c M-d" . crux-duplicate-and-comment-current-line-or-region)
          ("C-c r" . crux-rename-buffer-and-file)
          ("C-c t" . crux-visit-term-buffer)
@@ -426,6 +491,16 @@
   :config
   (setq avy-background t)
   (setq avy-style 'at-full)
+  ;; from https://karthinks.com/software/avy-can-do-anything/#a-division-of-responsibility
+  (defun avy-action-embark (pt)
+    (unwind-protect
+        (save-excursion
+          (goto-char pt)
+          (embark-act))
+      (select-window
+       (cdr (ring-ref avy-ring 0))))
+    t)
+  (setf (alist-get ?. avy-dispatch-alist) 'avy-action-embark)
   :bind
   (("M-g g" . avy-goto-line)
    ("C-c j" . avy-goto-char-timer)))
@@ -435,8 +510,28 @@
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (setq aw-dispatch-always t)
   (setq aw-minibuffer-flag t)
+  (ace-window-display-mode 1)
+  (defun +ace-window-prefix ()
+    "Use `ace-window' to display the buffer of the next command.
+The next buffer is the buffer displayed by the next command invoked
+immediately after this command (ignoring reading from the minibuffer).
+Creates a new window before displaying the buffer.
+When `switch-to-buffer-obey-display-actions' is non-nil,
+`switch-to-buffer' commands are also supported."
+    (interactive)
+    (display-buffer-override-next-command
+     (lambda (buffer _)
+       (let (window type)
+         (setq
+          window (aw-select (propertize " ACE" 'face 'mode-line-highlight))
+          type 'reuse)
+         (cons window type)))
+     nil "[ace-window]")
+    (message "Use `ace-window' to display next command buffer..."))
+
   :bind
-  (("s-w" . ace-window)))
+  (("s-w" . ace-window)
+   ("C-x 4 o" . +ace-window-prefix)))
 
 ;; (use-package swiper
 ;;   :bind
@@ -588,18 +683,41 @@
 
 ;; various searching commands
 (use-package consult
+  :init
+  ;; Tweak the register preview for `consult-register-load',
+  ;; `consult-register-store' and the built-in commands.  This improves the
+  ;; register formatting, adds thin separator lines, register sorting and hides
+  ;; the window mode line.
+  (advice-add #'register-preview :override #'consult-register-window)
+  (setq register-preview-delay 0.5)
+
+  ;; Use Consult to select xref locations with preview
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
   :config
   (consult-customize
    consult-line
-   :add-history (seq-some #'thing-at-point '(region symbol)))
+   :add-history (seq-some #'thing-at-point '(region symbol))
+   consult-theme :preview-key '(:debounce 0.2 any)
+   consult-ripgrep consult-git-grep consult-grep consult-man
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-bookmark consult--source-file-register
+   consult--source-recent-file consult--source-project-recent-file
+   ;; :preview-key "M-."
+   :preview-key '(:debounce 0.4 any))
   :bind
   (("M-i" . consult-imenu)
    ;; ("C-." . consult-imenu-multi)
    ("C-x b" . consult-buffer)
    ("C-c b" . consult-project-buffer)
    ("M-y" . consult-yank-replace)
+   ("s-y" . yank-pop)
    ("C-c f" . consult-recent-file)
-   ("C-s" . consult-line)))
+   ("C-s" . consult-line))
+  ;; Custom M-# bindings for fast register access
+  ("M-#" . consult-register-load)
+  ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+  ("C-M-#" . consult-register))
 
 ;; cuz it's awesome. Used by consult, so we don't config here
 ;; https://github.com/nlamirault/ripgrep.el
@@ -607,7 +725,7 @@
 
 ;; allow us to edit a grep buffer
 ;; https://github.com/mhayashi1120/Emacs-wgrep
-;; How to use: consult-ripgrep -> embark-consult / embark-export -> change grep buffer to wgrep C-c C-p -> edit lines -> C-x s apply changes and save all buffers
+;; How to use: consult-ripgrep -> embark-consult / embark-export -> change grep buffer to wgrep C-c C-p -> edit lines -> C-x C-s apply changes and save all buffers
 (use-package wgrep
   :config
   (setq wgrep-auto-save-buffer t))
@@ -675,16 +793,17 @@
   (add-hook 'completion-at-point-functions #'cape-dabbrev)
   (add-hook 'completion-at-point-functions #'cape-file)
   (add-hook 'completion-at-point-functions #'cape-emoji)
+  ;; (add-hook 'completion-at-point-functions #'cape-dict)
   (add-hook 'prog-mode-hook
-              (lambda ()
-                (add-hook 'completion-at-point-functions
-                          #'cape-keyword nil t))))
+            (lambda ()
+              (add-hook 'completion-at-point-functions
+                        #'cape-keyword nil t))))
 
 ;; Use Dabbrev with Corfu!
 (use-package dabbrev
   ;; Swap M-/ and C-M-/
   ;; :bind (("M-/" . dabbrev-completion)
-         ;; ("C-M-/" . dabbrev-expand))
+  ;; ("C-M-/" . dabbrev-expand))
   :config
   (add-to-list 'dabbrev-ignored-buffer-modes 'doc-view-mode)
   (add-to-list 'dabbrev-ignored-buffer-modes 'pdf-view-mode)
@@ -703,6 +822,15 @@
   (setq magit-display-buffer-function 'magit-display-buffer-same-window-except-diff-v1)
   (setq magit-save-repository-buffers 'dontask)
   (setq magit-section-initial-visibility-alist '((stashes . hide) (unpushed . show)))
+  ;; I need to paste my branch name into slack a lot these days (Vimeo)
+  (defun +magit-add-current-branch-to-kill-ring ()
+    "Show the current branch in the echo-area and add it to the `kill-ring'."
+    (interactive)
+    (let ((branch (magit-get-current-branch)))
+      (if branch
+          (progn (kill-new branch)
+                 (message "%s" branch))
+        (user-error "There is not current branch"))))
   :bind
   (("C-c g" . magit-file-dispatch)
    :map global-map
@@ -714,6 +842,8 @@
    ("l" . magit-log-buffer-file)
    ("t" . git-timemachine)
    ("h" . git-link)
+   ;; TODO: add this to the branch menu in magit?
+   ("r" . +magit-add-current-branch-to-kill-ring)
    ("b" . magit-blame)))
 
 ;; browse old versions of a file
@@ -725,7 +855,8 @@
 (use-package git-link
   :commands git-link
   :custom
-  (git-link-default-branch "main"))
+  (git-link-default-branch "main")
+  (git-link-consider-ssh-config t))
 
 ;; add the git diff highlights to the gutter
 ;; https://github.com/dgutov/diff-hl
@@ -826,15 +957,87 @@
 ;; prism colors by code nesting depth
 ;; Tried this, didn't love the way it handles comments-I think they should always be the same color, not just desaturated at the level they appear.
 ;; (use-package prism
-  ;; you need different modes for whitespace delimited languages
-  ;; :hook ((elisp-mode ruby-ts-mode) . prism-mode))
+;; you need different modes for whitespace delimited languages
+;; :hook ((elisp-mode ruby-ts-mode) . prism-mode))
 
-;; ligatures, for fun
+;; ligatures, for fun. Replaced by Plex mono with ligatures from https://github.com/liangjingkanji/PlexMono and `ligature` below
 ;; https://github.com/jming422/fira-code-mode
-(use-package fira-code-mode
+;; (use-package fira-code-mode
+;;   :config
+;;   ;; (fira-code-mode-install-fonts) ;; this prompts every time :(
+;;   (global-fira-code-mode))
+
+;; when the font has the ligatures inside it
+;; https://github.com/mickeynp/ligature.el
+(use-package ligature
   :config
-  ;; (fira-code-mode-install-fonts) ;; this prompts every time :(
-  (global-fira-code-mode))
+  ;; Enable the "www" ligature in every possible major mode
+  (ligature-set-ligatures 't '("www"))
+  ;; Enable traditional ligature support in eww-mode, if the
+  ;; `variable-pitch' face supports it
+  (ligature-set-ligatures 'eww-mode '("ff" "fi" "ffi"))
+  ;; Enable all Cascadia and Fira Code ligatures in programming modes
+  (ligature-set-ligatures 'prog-mode
+                        '(;; == === ==== => =| =>>=>=|=>==>> ==< =/=//=// =~
+                          ;; =:= =!=
+                          ("=" (rx (+ (or ">" "<" "|" "/" "~" ":" "!" "="))))
+                          ;; ;; ;;;
+                          (";" (rx (+ ";")))
+                          ;; && &&&
+                          ("&" (rx (+ "&")))
+                          ;; !! !!! !. !: !!. != !== !~
+                          ("!" (rx (+ (or "=" "!" "\." ":" "~"))))
+                          ;; ?? ??? ?:  ?=  ?.
+                          ("?" (rx (or ":" "=" "\." (+ "?"))))
+                          ;; %% %%%
+                          ("%" (rx (+ "%")))
+                          ;; |> ||> |||> ||||> |] |} || ||| |-> ||-||
+                          ;; |->>-||-<<-| |- |== ||=||
+                          ;; |==>>==<<==<=>==//==/=!==:===>
+                          ("|" (rx (+ (or ">" "<" "|" "/" ":" "!" "}" "\]"
+                                          "-" "=" ))))
+                          ;; \\ \\\ \/
+                          ("\\" (rx (or "/" (+ "\\"))))
+                          ;; ++ +++ ++++ +>
+                          ("+" (rx (or ">" (+ "+"))))
+                          ;; :: ::: :::: :> :< := :// ::=
+                          (":" (rx (or ">" "<" "=" "//" ":=" (+ ":"))))
+                          ;; // /// //// /\ /* /> /===:===!=//===>>==>==/
+                          ("/" (rx (+ (or ">"  "<" "|" "/" "\\" "\*" ":" "!"
+                                          "="))))
+                          ;; .. ... .... .= .- .? ..= ..<
+                          ("\." (rx (or "=" "-" "\?" "\.=" "\.<" (+ "\."))))
+                          ;; -- --- ---- -~ -> ->> -| -|->-->>->--<<-|
+                          ("-" (rx (+ (or ">" "<" "|" "~" "-"))))
+                          ;; *> */ *)  ** *** ****
+                          ("*" (rx (or ">" "/" ")" (+ "*"))))
+                          ;; www wwww
+                          ("w" (rx (+ "w")))
+                          ;; <> <!-- <|> <: <~ <~> <~~ <+ <* <$ </  <+> <*>
+                          ;; <$> </> <|  <||  <||| <|||| <- <-| <-<<-|-> <->>
+                          ;; <<-> <= <=> <<==<<==>=|=>==/==//=!==:=>
+                          ;; << <<< <<<<
+                          ("<" (rx (+ (or "\+" "\*" "\$" "<" ">" ":" "~"  "!"
+                                          "-"  "/" "|" "="))))
+                          ;; >: >- >>- >--|-> >>-|-> >= >== >>== >=|=:=>>
+                          ;; >> >>> >>>>
+                          (">" (rx (+ (or ">" "<" "|" "/" ":" "=" "-"))))
+                          ;; #: #= #! #( #? #[ #{ #_ #_( ## ### #####
+                          ("#" (rx (or ":" "=" "!" "(" "\?" "\[" "{" "_(" "_"
+                                       (+ "#"))))
+                          ;; ~~ ~~~ ~=  ~-  ~@ ~> ~~>
+                          ("~" (rx (or ">" "=" "-" "@" "~>" (+ "~"))))
+                          ;; __ ___ ____ _|_ __|____|_
+                          ("_" (rx (+ (or "_" "|"))))
+                          ;; Fira code: 0xFF 0x12
+                          ("0" (rx (and "x" (+ (in "A-F" "a-f" "0-9")))))
+                          ;; Fira code:
+                          "Fl"  "Tl"  "fi"  "fj"  "fl"  "ft"
+                          ;; The few not covered by the regexps.
+                          "{|"  "[|"  "]#"  "(*"  "}#"  "$>"  "^="))
+  ;; Enables ligature checks globally in all buffers. You can also do it
+  ;; per mode with `ligature-mode'.
+  (global-ligature-mode t))
 
 ;; snippets! LSP wants this and I want to make a logging snippet
 ;; https://jdhao.github.io/2021/10/06/yasnippet_setup_emacs/
@@ -880,25 +1083,35 @@
     ;; configure the cape-capf-buster.
     (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point))))
 
-
-  (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
-  ;; (setq lsp-enabled-clients '(sorbet-ls ruby-lsp-ls graphql-lsp ts-ls eslint))
+  ;; (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
+  ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls copilot-ls))
+  (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls))
   :config
   ;; these are emacs settings for lsp performance
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
   (setq gc-cons-threshold 100000000) ;; 100mib
 
-  (lsp-register-client
-     (make-lsp-client :new-connection (lsp-stdio-connection '("bundle" "exec" "rubocop" "--lsp"))
-                      :activation-fn (lsp-activate-on "ruby")
-                      :add-on? t
-                      :server-id 'my-rubocop-ls))
+  ;; this seems cool but isn't noticeably better than treesitter highlighting
+  ;; (setq lsp-semantic-tokens-enable t)
+  ;; (setq lsp-semantic-tokens-honor-refresh-requests t)
+
+  ;; (lsp-register-client
+  ;;  (make-lsp-client :new-connection (lsp-stdio-connection '("bundle" "exec" "rubocop" "--lsp"))
+  ;;                   :activation-fn (lsp-activate-on "ruby")
+  ;;                   :add-on? t
+  ;;                   :server-id 'my-rubocop-ls))
+  ;; (add-to-list 'lsp-language-id-configuration '(yaml-ts-mode . "yaml"))
   (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]tmp\\'")
   :custom
   (lsp-completion-provider :none) ;; corfu
+  (lsp-signature-auto-activate nil) ;; this momentarily steals focus and triggers auto-save that runs rubocop because of rubocopfmt-mode
   (lsp-sorbet-as-add-on t)
-  (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-/server/out/eslintServer.js" "--stdio"))
-  :hook (((graphql-mode js-base-mode ruby-base-mode typescript-ts-base-mode) . lsp-deferred)
+  (lsp-elixir-local-server-command "/usr/lib/elixir-ls/language_server.sh")
+  (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-3.0.16/server/out/eslintServer.js" "--stdio"))
+  (lsp-copilot-enabled t)
+  (lsp-copilot-version "1.357.0")
+  (lsp-copilot-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server")
+  :hook (((graphql-mode js-base-mode ruby-base-mode typescript-ts-base-mode terraform-mode) . lsp-deferred)
          ;; if you want which-key integration
          (lsp-mode . lsp-enable-which-key-integration)
          (lsp-completion-mode . my/lsp-mode-setup-completion)))
@@ -907,10 +1120,22 @@
 ;; (use-package lsp-ui)
 
 ;; GH CoPilot??
-;; https://github.com/zerolfx/copilot.el
+;; npm install @github/copilot-cli in a convenient location and set the server-executable variable below
+;; since the local project's nodejs version might not be compatible
+;; https://github.com/copilot-emacs/copilot.el
 (use-package copilot
-  :straight (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
-  :ensure t)
+  :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el"))
+  :hook (prog-mode . copilot-mode)
+  :bind
+  (:map copilot-completion-map
+        ("TAB" . copilot-accept-completion)
+        ("RET" . copilot-accept-completion)
+        ("C-c C-c" . copilot-accept-completion)
+        ("C-c C-n" . copilot-next-completion)
+        ("C-c C-p" . copilot-previous-completion)
+        ("C-c C-l" . copilot-clear-overlay))
+  :custom
+  (copilot-server-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server"))
 
 ;; flycheck mode to highlight warnings and errors in code
 ;; https://www.flycheck.org/en/latest
@@ -926,23 +1151,23 @@
 
 ;; tree-sitter navigation and semantic editing
 ;; https://github.com/mickeynp/combobulate
-(use-package combobulate
-  :preface
-  ;; You can customize Combobulate's key prefix here.
-  ;; Note that you may have to restart Emacs for this to take effect!
-  (setq combobulate-key-prefix "C-c o")
+;; (use-package combobulate
+;;   :preface
+;;   ;; You can customize Combobulate's key prefix here.
+;;   ;; Note that you may have to restart Emacs for this to take effect!
+;;   (setq combobulate-key-prefix "C-c o")
 
-  ;; Optional, but recommended.
-  ;;
-  ;; You can manually enable Combobulate with `M-x
-  ;; combobulate-mode'.
-  :hook ((python-ts-mode . combobulate-mode)
-         (js-ts-mode . combobulate-mode)
-         (css-ts-mode . combobulate-mode)
-         ;; (yaml-ts-mode . combobulate-mode)
-         (json-ts-mode . combobulate-mode)
-         (typescript-ts-mode . combobulate-mode)
-         (tsx-ts-mode . combobulate-mode)))
+;;   ;; Optional, but recommended.
+;;   ;;
+;;   ;; You can manually enable Combobulate with `M-x
+;;   ;; combobulate-mode'.
+;;   :hook ((python-ts-mode . combobulate-mode)
+;;          (js-ts-mode . combobulate-mode)
+;;          (css-ts-mode . combobulate-mode)
+;;          (yaml-ts-mode . combobulate-mode)
+;;          (json-ts-mode . combobulate-mode)
+;;          (typescript-ts-mode . combobulate-mode)
+;;          (tsx-ts-mode . combobulate-mode)))
 
 ;; subword mode is required! (built in)
 (use-package subword
@@ -966,8 +1191,33 @@
 
 ;; switch to yaml-mode package, because built-in yaml-ts-mode sucks
 (use-package yaml-mode
-  :mode (("\\.yml" . yaml-ts-mode)
-         ("\\.yaml" . yaml-ts-mode)))
+  :mode ("\\.yml$"
+         "\\.yaml$"))
+
+(use-package dockerfile-ts-mode
+  :straight nil
+  :mode ("Dockerfile\\'" . dockerfile-ts-mode))
+
+(use-package csv-mode
+  :straight (:host github :repo "emacs-straight/csv-mode")
+  :mode ("\\.csv$")
+  :config
+  (defun +csv-highlight (&optional separator)
+  (interactive (list (when current-prefix-arg (read-char "Separator: "))))
+  (font-lock-mode 1)
+  (let* ((separator (or separator ?\,))
+         (n (count-matches (string separator) (pos-bol) (pos-eol)))
+         (colors (cl-loop for i from 0 to 1.0 by (/ 2.0 n)
+                          collect (apply #'color-rgb-to-hex
+                                         (color-hsl-to-rgb i 0.3 0.5)))))
+    (cl-loop for i from 2 to n by 2
+             for c in colors
+             for r = (format "^\\([^%c\n]+%c\\)\\{%d\\}" separator separator i)
+             do (font-lock-add-keywords nil `((,r (1 '(face (:foreground ,c)))))))))
+  :hook
+  ((csv-mode . +csv-highlight)
+   (csv-mode . csv-align-mode)
+   (csv-mode . (lambda () (toggle-truncate-lines 1)))))
 
 ;;;;;;;;;;
 ;; Ruby ;;
@@ -1003,40 +1253,69 @@
          yard-mode)
 
   :config
-  (defun +rspec-package-root-directory-p (directory)
-    (file-regular-p (expand-file-name "package.yml" directory)))
+  (defvar +rspec-outline-blocks
+    '("context"
+      "describe"
+      "include_examples"
+      "it"
+      "it_behaves_like"
+      "it_should_behave_like"
+      "shared_examples_for"
+      "specify"))
 
-  (defun +rspec-package-root (&optional directory)
-    "Find the root directory of the package.
-     Walk the directory tree until it finds a package.yml file."
-    (let ((directory (file-name-as-directory (or directory default-directory))))
-      (cond ((rspec-root-directory-p directory)
-             (error "Could not determine the project root."))
-            ((+rspec-package-root-directory-p directory) (expand-file-name directory))
-            (t (+rspec-package-root (file-name-directory (directory-file-name directory)))))))
+  (defun +rspec-outline ()
+    "Use `occur' to create a linked outline of the spec associated with the current file, which may be either a spec or a target."
+    (interactive)
+    (let ((list-matching-lines-face nil)
+          (spec-buffer (if (rspec-buffer-is-spec-p)
+                           (current-buffer)
+                         (find-file-noselect (rspec-spec-file-for (buffer-file-name))))))
+      (with-current-buffer spec-buffer
+        (occur (rx-to-string `(seq line-start
+                                   (zero-or-more whitespace)
+                                   (optional "RSpec.")
+                                   (or ,@+rspec-outline-blocks)
+                                   (one-or-more whitespace)
+                                   (or "\"" "'" "A-Z" "{ ")))
+               0)))
+    (occur-rename-buffer))
 
-  (defun rspec-target-in-holder-dir-p (a-file-name)
-    (string-match (concat "^" (concat
-                               (regexp-quote
-                                (+rspec-package-root a-file-name))
-                               (regexp-opt rspec-primary-source-dirs)
-                               "/"))
-                  a-file-name))
+  ;; This is for packwerk vvv
+  ;; (defun +rspec-package-root-directory-p (directory)
+  ;;   (file-regular-p (expand-file-name "package.yml" directory)))
+
+  ;; (defun +rspec-package-root (&optional directory)
+  ;;   "Find the root directory of the package.
+  ;;    Walk the directory tree until it finds a package.yml file."
+  ;;   (let ((directory (file-name-as-directory (or directory default-directory))))
+  ;;     (cond ((rspec-root-directory-p directory)
+  ;;            (error "Could not determine the project root."))
+  ;;           ((+rspec-package-root-directory-p directory) (expand-file-name directory))
+  ;;           (t (+rspec-package-root (file-name-directory (directory-file-name directory)))))))
+
+  ;; (defun rspec-target-in-holder-dir-p (a-file-name)
+  ;;   (string-match (concat "^" (concat
+  ;;                              (regexp-quote
+  ;;                               (+rspec-package-root a-file-name))
+  ;;                              (regexp-opt rspec-primary-source-dirs)
+  ;;                              "/"))
+  ;;                 a-file-name))
+  ;; ^^^ packwerk
   :bind (:map rspec-verifiable-mode-keymap
-                ("s" . rspec-verify-single))
-  :custom
+              ("s" . rspec-verify-single)
+              ("o" . +rspec-outline))
+  ;; :custom
   ;; this is for Gusto/zenpayroll where the binstub takes care of bundler and spring
-  (rspec-use-spring-when-possible nil)
-  (rspec-use-bundler-when-possible nil)
-  (rspec-spec-command "bin/rspec --no-profile")
-  (rspec-command-options "--color"))
+  ;; (rspec-use-spring-when-possible nil)
+  ;; (rspec-use-bundler-when-possible t)
+  ;; (rspec-spec-command "bin/rspec --no-profile")
+  ;; (rspec-command-options "--color")
+  )
 
-;; standard test mode keybindings, not as featureful as rspec-mode
-;; https://github.com/arthurnn/minitest-emacs
 (use-package minitest
-  :after ruby-base-mode
-  :config (setq minitest-use-rails t)
-  :hook (ruby-base-mode . minitest-mode))
+  :after ruby-mode
+  :custom
+  (compilation-scroll-output nil))
 
 ;; only activate rspec-mode or minitest-mode depending on the project I'm working in
 ;; lifted from HRS here: https://github.com/hrs/dotfiles/blob/main/emacs/.config/emacs/configuration.org#ruby
@@ -1052,7 +1331,7 @@
 
 (defun +current-project-uses-minitest-p ()
   (and (project-current)
-       (file-directory-p (expand-file-name "test" (project-root (project-current))))))
+       (not (file-directory-p (expand-file-name "spec" (project-root (project-current)))))))
 
 (defun +activate-ruby-tests-mode ()
   (if (+current-project-uses-minitest-p)
@@ -1060,10 +1339,10 @@
         (minitest-mode 1)
         (rspec-mode 0)
         (rspec-verifiable-mode 0))
-      (progn
-        (minitest-mode 0)
-        (rspec-mode 1)
-        (rspec-verifiable-mode 1))))
+    (progn
+      (minitest-mode 0)
+      (rspec-mode 1)
+      (rspec-verifiable-mode 1))))
 
 (dolist (hook +ruby-testable-mode-hooks)
   (add-hook hook #'+activate-ruby-tests-mode))
@@ -1127,7 +1406,7 @@
 ;; https://github.com/emiller88/emacs-jest
 (use-package jest
   :custom
-  (jest-executable "yarn test")
+  (jest-executable "npm test")
   (jest-unsaved-buffers-behavior 'save-current)
   :bind
   (:map jest-minor-mode-map
@@ -1144,3 +1423,40 @@
   :config
   (add-to-list 'prettier-major-mode-parsers '(typescript-ts-base-mode . (typescript babel-ts)))
   (global-prettier-mode))
+
+;;;;;;;;;;;;
+;; Elixir ;;
+;;;;;;;;;;;;
+
+;; just for elixir-format
+(use-package elixir-mode)
+
+
+;; I think this is what we want?
+(use-package elixir-ts-mode
+  :mode ("\\.ex\\'". elixir-ts-mode))
+
+;;;;;;;;;;;;;;;;
+;; Arch Linux ;;
+;;;;;;;;;;;;;;;;
+
+;; this is a thing? cool.
+;; https://github.com/UndeadKernel/pacfiles-mode
+(use-package pacfiles-mode)
+
+;;;;;;;;;;;;;;;;;;;;;;
+;; Other misc modes ;;
+;;;;;;;;;;;;;;;;;;;;;;
+(use-package terraform-mode)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(safe-local-variable-values '((encoding . utf-8))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(markdown-pre-face ((t nil))))

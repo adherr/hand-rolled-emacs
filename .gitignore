@@ -6,3 +6,6 @@
 /.cache/
 /.lsp-session-v1
 /elpa/
+/eln-cache/
+/projects.eld
+/projectile-bookmarks.eld
