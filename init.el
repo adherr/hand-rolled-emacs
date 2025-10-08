@@ -940,7 +940,7 @@
   :hook ((python-ts-mode . combobulate-mode)
          (js-ts-mode . combobulate-mode)
          (css-ts-mode . combobulate-mode)
-         (yaml-ts-mode . combobulate-mode)
+         ;; (yaml-ts-mode . combobulate-mode)
          (json-ts-mode . combobulate-mode)
          (typescript-ts-mode . combobulate-mode)
          (tsx-ts-mode . combobulate-mode)))
@@ -965,8 +965,8 @@
         markdown-disable-tooltip-prompt t
         markdown-fontify-code-blocks-natively t))
 
-;; this is built in, but not associated with .yml files
-(use-package yaml-ts-mode
+;; switch to yaml-mode package, because built-in yaml-ts-mode sucks
+(use-package yaml-mode
   :mode (("\\.yml" . yaml-ts-mode)
          ("\\.yaml" . yaml-ts-mode)))
 
