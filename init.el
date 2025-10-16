@@ -5,9 +5,9 @@
       (bootstrap-version 6))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
+	(url-retrieve-synchronously
+	 "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+	 'silent 'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
@@ -28,28 +28,28 @@
   :config
   (exec-path-from-shell-initialize)
   (if (and (fboundp 'native-comp-available-p)
-           (native-comp-available-p))
+	   (native-comp-available-p))
       (progn
-        (message "Native comp is available")
-        (when (eq system-type 'darwin)
-          (progn
-            ;; bin inside the Emacs.app
-            (add-to-list 'exec-path (concat invocation-directory "bin") t)
-            ;; this is a combination of https://xenodium.com/trying-out-gccemacs-on-macos/
-            ;; and stuff from this thread https://github.com/d12frosted/homebrew-emacs-plus/issues/378#issuecomment-1666548762
-            (setenv "LIBRARY_PATH" (concat (getenv "LIBRARY_PATH")
-                                           (when (getenv "LIBRARY_PATH")
-                                             ":")
-                                           (mapconcat (lambda (path) (car (file-expand-wildcards path)))
-                                                      '("/usr/local/opt/gcc/lib/gcc/*"
-                                                        "/usr/local/opt/libgccjit/lib/gcc/*"
-                                                        "/usr/local/opt/gcc/lib/gcc/*/gcc/*/*"
-                                                        "/opt/homebrew/opt/gcc/lib/gcc/*"
-                                                        "/opt/homebrew/opt/libgccjit/lib/gcc/*"
-                                                        "/opt/homebrew/opt/gcc/lib/gcc/*/gcc/*/*")
-                                                      ":")))))
-        ;; Only set after LIBRARY_PATH can find gcc libraries.
-        (setq comp-deferred-compilation t))
+	(message "Native comp is available")
+	(when (eq system-type 'darwin)
+	  (progn
+	    ;; bin inside the Emacs.app
+	    (add-to-list 'exec-path (concat invocation-directory "bin") t)
+	    ;; this is a combination of https://xenodium.com/trying-out-gccemacs-on-macos/
+	    ;; and stuff from this thread https://github.com/d12frosted/homebrew-emacs-plus/issues/378#issuecomment-1666548762
+	    (setenv "LIBRARY_PATH" (concat (getenv "LIBRARY_PATH")
+					   (when (getenv "LIBRARY_PATH")
+					     ":")
+					   (mapconcat (lambda (path) (car (file-expand-wildcards path)))
+						      '("/usr/local/opt/gcc/lib/gcc/*"
+							"/usr/local/opt/libgccjit/lib/gcc/*"
+							"/usr/local/opt/gcc/lib/gcc/*/gcc/*/*"
+							"/opt/homebrew/opt/gcc/lib/gcc/*"
+							"/opt/homebrew/opt/libgccjit/lib/gcc/*"
+							"/opt/homebrew/opt/gcc/lib/gcc/*/gcc/*/*")
+						      ":")))))
+	;; Only set after LIBRARY_PATH can find gcc libraries.
+	(setq comp-deferred-compilation t))
     (message "Native comp is *not* available"))
   (dolist (var '("LANG" "LC_CTYPE" "LIBRARY_PATH" "LSP_USE_PLISTS"))
     (add-to-list 'exec-path-from-shell-variables var)))
@@ -73,22 +73,22 @@
   (fset 'yes-or-no-p 'y-or-n-p)
   ;; flash the modeline instead of bell (not sure I need this)
   (setq ring-bell-function
-        (lambda ()
-          (let ((orig-fg (face-foreground 'mode-line)))
-            (set-face-foreground 'mode-line "#F2804F")
-            (run-with-idle-timer 0.1 nil
-                                 (lambda (fg) (set-face-foreground 'mode-line fg))
-                                 orig-fg))))
+	(lambda ()
+	  (let ((orig-fg (face-foreground 'mode-line)))
+	    (set-face-foreground 'mode-line "#F2804F")
+	    (run-with-idle-timer 0.1 nil
+				 (lambda (fg) (set-face-foreground 'mode-line fg))
+				 orig-fg))))
   ;; nice scrolling
   (setq scroll-margin 0
-        scroll-conservatively 100000
-        scroll-preserve-screen-position 1)
+	scroll-conservatively 100000
+	scroll-preserve-screen-position 1)
   ;; more useful frame title, that show either a file or a
   ;; buffer name (if the buffer isn't visiting a file)
   (setq frame-title-format
-        '("" (:eval (if (buffer-file-name)
-                        (abbreviate-file-name (buffer-file-name))
-                      "%b"))))
+	'("" (:eval (if (buffer-file-name)
+			(abbreviate-file-name (buffer-file-name))
+		      "%b"))))
   ;; confirm exit because fat fingers
   (setq confirm-kill-emacs 'y-or-n-p)
   ;; I don't think I've ever successfully transposed words, but it's a mess when I open tabs in emacs
@@ -105,16 +105,16 @@
   (desktop-save-mode 1)
   ;; store all backup and autosave files in the tmp dir
   (setq backup-directory-alist
-        `((".*" . ,temporary-file-directory)))
+	`((".*" . ,temporary-file-directory)))
   (setq auto-save-file-name-transforms
-        `((".*" ,temporary-file-directory t)))
+	`((".*" ,temporary-file-directory t)))
   ;; setup recenf mode because sometimes it's helpful
   (setq recentf-save-file (expand-file-name "recentf" savefile-dir)
-        recentf-max-saved-items 500
-        recentf-max-menu-items 15
-        ;; disable recentf-cleanup on Emacs start, because it can cause
-        ;; problems with remote files
-        recentf-auto-cleanup 'never)
+	recentf-max-saved-items 500
+	recentf-max-menu-items 15
+	;; disable recentf-cleanup on Emacs start, because it can cause
+	;; problems with remote files
+	recentf-auto-cleanup 'never)
   (recentf-mode)
   ;; revert buffers automatically when underlying files are changed externally
   (global-auto-revert-mode t)
@@ -128,12 +128,12 @@
   (save-place-mode 1)
   ;; savehist keeps track of some history
   (setq savehist-additional-variables
-        ;; search entries
-        '(search-ring regexp-search-ring vertico-repeat-history)
-        ;; save every minute
-        savehist-autosave-interval 60
-        ;; keep the home clean
-        savehist-file (expand-file-name "savehist" savefile-dir))
+	;; search entries
+	'(search-ring regexp-search-ring vertico-repeat-history)
+	;; save every minute
+	savehist-autosave-interval 60
+	;; keep the home clean
+	savehist-file (expand-file-name "savehist" savefile-dir))
   (savehist-mode +1)
   ;; move between visible windows with Shift + arrows
   (windmove-default-keybindings)
@@ -159,9 +159,9 @@
   ;; compilation settings
   ;; https://stackoverflow.com/a/71785402
   (setq compilation-ask-about-save nil  ; Just save before compiling
-        compilation-always-kill t       ; Just kill old compile processes before starting the new one
-        compilation-scroll-output 'first-error ; Automatically scroll to first error
-        compilation-max-output-line-length nil) ; Don't hide long lines
+	compilation-always-kill t       ; Just kill old compile processes before starting the new one
+	compilation-scroll-output 'first-error ; Automatically scroll to first error
+	compilation-max-output-line-length nil) ; Don't hide long lines
   (use-package ansi-color
     :straight nil
     :hook (compilation-filter . ansi-color-compilation-filter))
@@ -170,7 +170,7 @@
     "run a function over the region between START and END in current buffer."
     (save-excursion
       (let ((text (delete-and-extract-region start end)))
-        (insert (funcall func text)))))
+	(insert (funcall func text)))))
 
   (use-package url
     :straight nil
@@ -190,27 +190,27 @@
   (define-advice find-file (:around (proc filename &optional wildcards) with-line-number)
     "if format is <filename>:#, open file at line-number #"
     (let* (;; fap-<junk> deals with ffap stripping line numbers
-           (fap (thing-at-point 'filename t))
-           (fap-lino-idx (if fap (string-match ":[0-9]+$" fap)))
-           (fap-line-num (if fap-lino-idx
-                             (string-to-number (substring fap (1+ (match-beginning 0)) (match-end 0)))))
-           (fap-name (if fap (expand-file-name (if fap-lino-idx (substring fap 0 fap-lino-idx) fap))))
-           ;; fn-<junk> deals with the filename in the minibuffer
-           (fn-lino-idx (string-match ":[0-9]+$" filename))
-           (fn-line-num (if fn-lino-idx
-                            (string-to-number (substring filename (1+ (match-beginning 0)) (match-end 0)))))
-           (filename (if fn-lino-idx (substring filename 0 fn-lino-idx) filename))
-           ;; pick out the right line number (fap- or fn-, which may have been edited by the user)
-           (line-number (cond (;; the first condition is necessary becaue fn-line-num nil with
-                               ;; fap-line-num non-nil would default to wrong line number
-                               (not (equal filename fap-name)) fn-line-num)
-                              (fn-line-num fn-line-num)   ; prefer user's line-num ...
-                              (fap-line-num fap-line-num) ; ... over fap's line-num
-                              (t nil)))                   ; no line numbers anywhere
-           (res (apply proc filename '(wildcards)))) ; funcall also works with same syntax
+	   (fap (thing-at-point 'filename t))
+	   (fap-lino-idx (if fap (string-match ":[0-9]+$" fap)))
+	   (fap-line-num (if fap-lino-idx
+			     (string-to-number (substring fap (1+ (match-beginning 0)) (match-end 0)))))
+	   (fap-name (if fap (expand-file-name (if fap-lino-idx (substring fap 0 fap-lino-idx) fap))))
+	   ;; fn-<junk> deals with the filename in the minibuffer
+	   (fn-lino-idx (string-match ":[0-9]+$" filename))
+	   (fn-line-num (if fn-lino-idx
+			    (string-to-number (substring filename (1+ (match-beginning 0)) (match-end 0)))))
+	   (filename (if fn-lino-idx (substring filename 0 fn-lino-idx) filename))
+	   ;; pick out the right line number (fap- or fn-, which may have been edited by the user)
+	   (line-number (cond (;; the first condition is necessary becaue fn-line-num nil with
+			       ;; fap-line-num non-nil would default to wrong line number
+			       (not (equal filename fap-name)) fn-line-num)
+			      (fn-line-num fn-line-num)   ; prefer user's line-num ...
+			      (fap-line-num fap-line-num) ; ... over fap's line-num
+			      (t nil)))                   ; no line numbers anywhere
+	   (res (apply proc filename '(wildcards)))) ; funcall also works with same syntax
       (when line-number
-        (goto-char (point-min))
-        (forward-line (1- line-number)))
+	(goto-char (point-min))
+	(forward-line (1- line-number)))
       res))
 
   ;; Editorish things
@@ -235,7 +235,7 @@
   (setq blink-matching-paren nil) ;; disable annoying blink-matching-paren
   ;; ispell
   (setq ispell-program-name "aspell" ; use aspell instead of ispell
-        ispell-extra-args '("--sug-mode=ultra"))
+	ispell-extra-args '("--sug-mode=ultra"))
   (setq text-mode-ispell-word-completion nil)
   (flyspell-mode +1)
   ;; highlight the current line
@@ -269,7 +269,7 @@
 
   ;; make a shell script executable automatically on save
   (add-hook 'after-save-hook
-            'executable-make-buffer-file-executable-if-script-p)
+	    'executable-make-buffer-file-executable-if-script-p)
 
   ;; don't validate XML schemas, because nXML mode only works with RELAX NG schemata, and it seems like a lot of work to set those up
   ;; https://www.gnu.org/software/emacs/manual/html_mono/nxml-mode.html#Locating-a-schema
@@ -289,13 +289,15 @@
   ;; ruby mode should include rbi files
   ("\\.rbi\\'" . ruby-ts-mode)
   ("\\.rb\\'" . ruby-ts-mode)
+  ;; sass files are scss
+  ("\\.sass\\'" . scss-mode)
 
   :bind
   (
    ("C-c d" . duplicate-dwim)
    ;; ("M-/" . hippie-expand) ;; replaced with dabbrev expand and corfu
    ("C-x O" . (lambda () (interactive)
-                (other-window -1)))
+		(other-window -1)))
    ("s-[" . (lambda () (interactive) (insert-char #x201c)))
    ("s-{" . (lambda () (interactive) (insert-char #x201d)))
    ("s-]" . (lambda () (interactive) (insert-char #x2018)))
@@ -305,11 +307,11 @@
 
   ;; go to definition help functions
   (:map help-map
-        ("C-f" . find-function)
-        ("C-k" . find-function-on-key)
-        ("C-v" . find-variable)
-        ("C-l" . find-library)
-        ("C-i" . info-display-manual))
+	("C-f" . find-function)
+	("C-k" . find-function-on-key)
+	("C-v" . find-variable)
+	("C-l" . find-library)
+	("C-i" . info-display-manual))
 
   :hook
   ;; enable some really cool extensions like C-x C-j(dired-jump)
@@ -369,18 +371,18 @@
    ("C-M-SPC" . sp-mark-sexp)))
 
 ;; love me some zenburn theme
-;; (use-package zenburn-theme
-;;   :straight (:host github :repo "bbatsov/zenburn-emacs")
-;;   :config
-;;   (load-theme 'zenburn t))
+(use-package zenburn-theme
+ :straight (:host github :repo "bbatsov/zenburn-emacs")
+ :config
+ (load-theme 'zenburn t))
 
 ;; Try it out to be like jxpx777
-(use-package base16-theme
-  :straight (:host github :repo "tinted-theming/base16-emacs")
-  :config
-  (setq base16-highlight-mode-line 'contrast)
-  (global-hl-line-mode -1) ;; line highlight doesn't play nice with text colors
-  (load-theme 'base16-tomorrow t))
+;; (use-package base16-theme
+;;   :straight (:host github :repo "tinted-theming/base16-emacs")
+;;   :config
+;;   (setq base16-highlight-mode-line 'contrast)
+;;   (global-hl-line-mode -1) ;; line highlight doesn't play nice with text colors
+;;   (load-theme 'base16-tomorrow-night t))
 
 ;; show all of the completions from the keys entered so far
 (use-package which-key
@@ -398,10 +400,10 @@
        :host codeberg
        :repo "akib/emacs-eat"
        :files ("*.el" ("term" "term/*.el") "*.texi"
-               "*.ti" ("terminfo/e" "terminfo/e/*")
-               ("terminfo/65" "terminfo/65/*")
-               ("integration" "integration/*")
-               (:exclude ".dir-locals.el" "*-tests.el"))))
+	       "*.ti" ("terminfo/e" "terminfo/e/*")
+	       ("terminfo/65" "terminfo/65/*")
+	       ("integration" "integration/*")
+	       (:exclude ".dir-locals.el" "*-tests.el"))))
 
 
 
@@ -412,7 +414,7 @@
 (use-package undo-tree
   :config
   (setq undo-tree-history-directory-alist
-        `((".*" . ,temporary-file-directory)))
+	`((".*" . ,temporary-file-directory)))
   (setq undo-tree-enable-undo-in-region t)
   (setq undo-tree-auto-save-history t)
   (global-undo-tree-mode))
@@ -427,29 +429,29 @@
 (use-package crux
   :config (crux-with-region-or-line kill-region)
   :bind (;; mimic popular IDEs binding, note that it doesn't work in a terminal session
-         ("C-a" . crux-move-beginning-of-line)
-         ([S-return] . crux-smart-open-line)
-         ("M-o" . crux-smart-open-line)
-         ([C-S-return] . crux-smart-open-line-above)
-         ([C-backspace] . crux-kill-line-backwards)
-         ("C-c n" . crux-cleanup-buffer-or-region)
-         ("C-c f" . crux-recentf-find-file)
-         ("C-M-z" . crux-indent-defun)
-         ("C-c D" . crux-delete-file-and-buffer)
-         ;; ("C-c d" . crux-duplicate-current-line-or-region) ;; replaced with builtin duplicate-dwim
-         ("C-c M-d" . crux-duplicate-and-comment-current-line-or-region)
-         ("C-c r" . crux-rename-buffer-and-file)
-         ("C-c t" . crux-visit-term-buffer)
-         ("C-c k" . crux-kill-other-buffers)
-         ("C-c TAB" . crux-indent-rigidly-and-copy-to-clipboard)
-         ("C-c I" . crux-find-user-init-file)
-         ("C-c S" . crux-find-shell-init-file)
-         ("C-^" . crux-top-join-line)
-         ("s-r" . crux-recentf-find-file)
-         ("s-j" . crux-top-join-line)
-         ("s-k" . crux-kill-whole-line)
-         ([remap kill-whole-line] . crux-kill-whole-line)
-         ("s-o" . crux-smart-open-line-above)))
+	 ("C-a" . crux-move-beginning-of-line)
+	 ([S-return] . crux-smart-open-line)
+	 ("M-o" . crux-smart-open-line)
+	 ([C-S-return] . crux-smart-open-line-above)
+	 ([C-backspace] . crux-kill-line-backwards)
+	 ("C-c n" . crux-cleanup-buffer-or-region)
+	 ("C-c f" . crux-recentf-find-file)
+	 ("C-M-z" . crux-indent-defun)
+	 ("C-c D" . crux-delete-file-and-buffer)
+	 ;; ("C-c d" . crux-duplicate-current-line-or-region) ;; replaced with builtin duplicate-dwim
+	 ("C-c M-d" . crux-duplicate-and-comment-current-line-or-region)
+	 ("C-c r" . crux-rename-buffer-and-file)
+	 ("C-c t" . crux-visit-term-buffer)
+	 ("C-c k" . crux-kill-other-buffers)
+	 ("C-c TAB" . crux-indent-rigidly-and-copy-to-clipboard)
+	 ("C-c I" . crux-find-user-init-file)
+	 ("C-c S" . crux-find-shell-init-file)
+	 ("C-^" . crux-top-join-line)
+	 ("s-r" . crux-recentf-find-file)
+	 ("s-j" . crux-top-join-line)
+	 ("s-k" . crux-kill-whole-line)
+	 ([remap kill-whole-line] . crux-kill-whole-line)
+	 ("s-o" . crux-smart-open-line-above)))
 
 
 ;; expand region resonably QUESTIONABLE because I dont' use it
@@ -463,26 +465,26 @@
 (use-package super-save
   :config
   (setq super-save-actions '(ace-window
-                             avy-goto-char-timer
-                             avy-goto-line
-                             avy-goto-word-or-subword-1
-                             consult-imenu-multi
-                             consult-ripgrep
-                             find-file
-                             minitest-rerun
-                             minitest-verify
-                             minitest-verify-all
-                             minitest-verify-single
-                             projectile-find-file
-                             rubocop-check-project
-                             rubocop-format-project
-                             rubocop-check-directory
-                             rubocop-format-directory
-                             rubocop-check-current-file
-                             rubocop-autocorrect-project
-                             rubocop-format-current-file
-                             rubocop-autocorrect-directory
-                             rubocop-autocorrect-current-file))
+			     avy-goto-char-timer
+			     avy-goto-line
+			     avy-goto-word-or-subword-1
+			     consult-imenu-multi
+			     consult-ripgrep
+			     find-file
+			     minitest-rerun
+			     minitest-verify
+			     minitest-verify-all
+			     minitest-verify-single
+			     projectile-find-file
+			     rubocop-check-project
+			     rubocop-format-project
+			     rubocop-check-directory
+			     rubocop-format-directory
+			     rubocop-check-current-file
+			     rubocop-autocorrect-project
+			     rubocop-format-current-file
+			     rubocop-autocorrect-directory
+			     rubocop-autocorrect-current-file))
   (dolist (action super-save-actions)
     (add-to-list 'super-save-triggers action))
   (super-save-mode +1))
@@ -494,9 +496,9 @@
   ;; from https://karthinks.com/software/avy-can-do-anything/#a-division-of-responsibility
   (defun avy-action-embark (pt)
     (unwind-protect
-        (save-excursion
-          (goto-char pt)
-          (embark-act))
+	(save-excursion
+	  (goto-char pt)
+	  (embark-act))
       (select-window
        (cdr (ring-ref avy-ring 0))))
     t)
@@ -522,10 +524,10 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
     (display-buffer-override-next-command
      (lambda (buffer _)
        (let (window type)
-         (setq
-          window (aw-select (propertize " ACE" 'face 'mode-line-highlight))
-          type 'reuse)
-         (cons window type)))
+	 (setq
+	  window (aw-select (propertize " ACE" 'face 'mode-line-highlight))
+	  type 'reuse)
+	 (cons window type)))
      nil "[ace-window]")
     (message "Use `ace-window' to display next command buffer..."))
 
@@ -587,9 +589,9 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
       (goto-char (point-max))
       (insert " ")
       (add-text-properties (minibuffer-prompt-end) (point-max)
-                           '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
+			   '(invisible t read-only t cursor-intangible t rear-nonsticky t))))
   :bind (:map vertico-map
-              ("S-SPC" . +vertico-restrict-to-matches)))
+	      ("S-SPC" . +vertico-restrict-to-matches)))
 
 ;; Configure directory extension.
 (use-package vertico-directory
@@ -597,9 +599,9 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :after vertico
   ;; More convenient directory navigation commands
   :bind (:map vertico-map
-              ("RET" . vertico-directory-enter)
-              ("DEL" . vertico-directory-delete-char)
-              ("M-DEL" . vertico-directory-delete-word))
+	      ("RET" . vertico-directory-enter)
+	      ("DEL" . vertico-directory-delete-char)
+	      ("M-DEL" . vertico-directory-delete-word))
   ;; Tidy shadowed file names
   :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
@@ -650,7 +652,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :init
   (marginalia-mode)
   :bind (:map minibuffer-local-map
-              ("M-A" . marginalia-cycle)))
+	      ("M-A" . marginalia-cycle)))
 
 ;; do stuff from where we are. Config lifted straight from
 ;; https://github.com/oantolin/embark
@@ -669,9 +671,9 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :config
   ;; Hide the mode line of the Embark live/completions buffers
   (add-to-list 'display-buffer-alist
-               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                 nil
-                 (window-parameters (mode-line-format . none)))))
+	       '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+		 nil
+		 (window-parameters (mode-line-format . none)))))
 
 ;; Consult users will also want the embark-consult package.
 (use-package embark-consult
@@ -693,7 +695,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 
   ;; Use Consult to select xref locations with preview
   (setq xref-show-xrefs-function #'consult-xref
-        xref-show-definitions-function #'consult-xref)
+	xref-show-definitions-function #'consult-xref)
   :config
   (consult-customize
    consult-line
@@ -795,9 +797,9 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (add-hook 'completion-at-point-functions #'cape-emoji)
   ;; (add-hook 'completion-at-point-functions #'cape-dict)
   (add-hook 'prog-mode-hook
-            (lambda ()
-              (add-hook 'completion-at-point-functions
-                        #'cape-keyword nil t))))
+	    (lambda ()
+	      (add-hook 'completion-at-point-functions
+			#'cape-keyword nil t))))
 
 ;; Use Dabbrev with Corfu!
 (use-package dabbrev
@@ -828,9 +830,9 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
     (interactive)
     (let ((branch (magit-get-current-branch)))
       (if branch
-          (progn (kill-new branch)
-                 (message "%s" branch))
-        (user-error "There is not current branch"))))
+	  (progn (kill-new branch)
+		 (message "%s" branch))
+	(user-error "There is not current branch"))))
   :bind
   (("C-c g" . magit-file-dispatch)
    :map global-map
@@ -871,12 +873,12 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 (use-package projectile
   :init (projectile-mode t)
   :bind (:map projectile-mode-map
-              ("C-c p" . projectile-command-map)
-              :map projectile-command-map
-              ;; consult ripgrep obeys project setting, and it's nicer than the default projectile command
-              ("s r" . consult-ripgrep)
-              ("w f" . +kill-project-file-path)
-              ("w l" . +kill-project-file-line-path))
+	      ("C-c p" . projectile-command-map)
+	      :map projectile-command-map
+	      ;; consult ripgrep obeys project setting, and it's nicer than the default projectile command
+	      ("s r" . consult-ripgrep)
+	      ("w f" . +kill-project-file-path)
+	      ("w l" . +kill-project-file-line-path))
   :config
   (defun +project-file-path ()
     (file-relative-name buffer-file-name (projectile-project-root)))
@@ -890,8 +892,8 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (defun +kill-project-file-line-path ()
     (interactive)
     (let ((path-line (format "%s:%s"
-                             (+project-file-path)
-                             (line-number-at-pos))))
+			     (+project-file-path)
+			     (line-number-at-pos))))
       (kill-new path-line)
       (message path-line)))
   ;; TODO: make sure this is a git repo before running magit-status and default to something else otherwise
@@ -923,7 +925,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;; https://github.com/emacsfodder/move-text
 (use-package move-text
   :bind (([C-S-up] . move-text-up)
-         ([C-S-down] . move-text-down)))
+	 ([C-S-down] . move-text-down)))
 
 ;; visual, more powerful zap-to-char
 ;; https://github.com/thierryvolpiatto/zop-to-char
@@ -978,63 +980,63 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (ligature-set-ligatures 'eww-mode '("ff" "fi" "ffi"))
   ;; Enable all Cascadia and Fira Code ligatures in programming modes
   (ligature-set-ligatures 'prog-mode
-                        '(;; == === ==== => =| =>>=>=|=>==>> ==< =/=//=// =~
-                          ;; =:= =!=
-                          ("=" (rx (+ (or ">" "<" "|" "/" "~" ":" "!" "="))))
-                          ;; ;; ;;;
-                          (";" (rx (+ ";")))
-                          ;; && &&&
-                          ("&" (rx (+ "&")))
-                          ;; !! !!! !. !: !!. != !== !~
-                          ("!" (rx (+ (or "=" "!" "\." ":" "~"))))
-                          ;; ?? ??? ?:  ?=  ?.
-                          ("?" (rx (or ":" "=" "\." (+ "?"))))
-                          ;; %% %%%
-                          ("%" (rx (+ "%")))
-                          ;; |> ||> |||> ||||> |] |} || ||| |-> ||-||
-                          ;; |->>-||-<<-| |- |== ||=||
-                          ;; |==>>==<<==<=>==//==/=!==:===>
-                          ("|" (rx (+ (or ">" "<" "|" "/" ":" "!" "}" "\]"
-                                          "-" "=" ))))
-                          ;; \\ \\\ \/
-                          ("\\" (rx (or "/" (+ "\\"))))
-                          ;; ++ +++ ++++ +>
-                          ("+" (rx (or ">" (+ "+"))))
-                          ;; :: ::: :::: :> :< := :// ::=
-                          (":" (rx (or ">" "<" "=" "//" ":=" (+ ":"))))
-                          ;; // /// //// /\ /* /> /===:===!=//===>>==>==/
-                          ("/" (rx (+ (or ">"  "<" "|" "/" "\\" "\*" ":" "!"
-                                          "="))))
-                          ;; .. ... .... .= .- .? ..= ..<
-                          ("\." (rx (or "=" "-" "\?" "\.=" "\.<" (+ "\."))))
-                          ;; -- --- ---- -~ -> ->> -| -|->-->>->--<<-|
-                          ("-" (rx (+ (or ">" "<" "|" "~" "-"))))
-                          ;; *> */ *)  ** *** ****
-                          ("*" (rx (or ">" "/" ")" (+ "*"))))
-                          ;; www wwww
-                          ("w" (rx (+ "w")))
-                          ;; <> <!-- <|> <: <~ <~> <~~ <+ <* <$ </  <+> <*>
-                          ;; <$> </> <|  <||  <||| <|||| <- <-| <-<<-|-> <->>
-                          ;; <<-> <= <=> <<==<<==>=|=>==/==//=!==:=>
-                          ;; << <<< <<<<
-                          ("<" (rx (+ (or "\+" "\*" "\$" "<" ">" ":" "~"  "!"
-                                          "-"  "/" "|" "="))))
-                          ;; >: >- >>- >--|-> >>-|-> >= >== >>== >=|=:=>>
-                          ;; >> >>> >>>>
-                          (">" (rx (+ (or ">" "<" "|" "/" ":" "=" "-"))))
-                          ;; #: #= #! #( #? #[ #{ #_ #_( ## ### #####
-                          ("#" (rx (or ":" "=" "!" "(" "\?" "\[" "{" "_(" "_"
-                                       (+ "#"))))
-                          ;; ~~ ~~~ ~=  ~-  ~@ ~> ~~>
-                          ("~" (rx (or ">" "=" "-" "@" "~>" (+ "~"))))
-                          ;; __ ___ ____ _|_ __|____|_
-                          ("_" (rx (+ (or "_" "|"))))
-                          ;; Fira code: 0xFF 0x12
-                          ("0" (rx (and "x" (+ (in "A-F" "a-f" "0-9")))))
-                          ;; Fira code:
-                          "Fl"  "Tl"  "fi"  "fj"  "fl"  "ft"
-                          ;; The few not covered by the regexps.
-                          "{|"  "[|"  "]#"  "(*"  "}#"  "$>"  "^="))
+			'(;; == === ==== => =| =>>=>=|=>==>> ==< =/=//=// =~
+			  ;; =:= =!=
+			  ("=" (rx (+ (or ">" "<" "|" "/" "~" ":" "!" "="))))
+			  ;; ;; ;;;
+			  (";" (rx (+ ";")))
+			  ;; && &&&
+			  ("&" (rx (+ "&")))
+			  ;; !! !!! !. !: !!. != !== !~
+			  ("!" (rx (+ (or "=" "!" "\." ":" "~"))))
+			  ;; ?? ??? ?:  ?=  ?.
+			  ("?" (rx (or ":" "=" "\." (+ "?"))))
+			  ;; %% %%%
+			  ("%" (rx (+ "%")))
+			  ;; |> ||> |||> ||||> |] |} || ||| |-> ||-||
+			  ;; |->>-||-<<-| |- |== ||=||
+			  ;; |==>>==<<==<=>==//==/=!==:===>
+			  ("|" (rx (+ (or ">" "<" "|" "/" ":" "!" "}" "\]"
+					  "-" "=" ))))
+			  ;; \\ \\\ \/
+			  ("\\" (rx (or "/" (+ "\\"))))
+			  ;; ++ +++ ++++ +>
+			  ("+" (rx (or ">" (+ "+"))))
+			  ;; :: ::: :::: :> :< := :// ::=
+			  (":" (rx (or ">" "<" "=" "//" ":=" (+ ":"))))
+			  ;; // /// //// /\ /* /> /===:===!=//===>>==>==/
+			  ("/" (rx (+ (or ">"  "<" "|" "/" "\\" "\*" ":" "!"
+					  "="))))
+			  ;; .. ... .... .= .- .? ..= ..<
+			  ("\." (rx (or "=" "-" "\?" "\.=" "\.<" (+ "\."))))
+			  ;; -- --- ---- -~ -> ->> -| -|->-->>->--<<-|
+			  ("-" (rx (+ (or ">" "<" "|" "~" "-"))))
+			  ;; *> */ *)  ** *** ****
+			  ("*" (rx (or ">" "/" ")" (+ "*"))))
+			  ;; www wwww
+			  ("w" (rx (+ "w")))
+			  ;; <> <!-- <|> <: <~ <~> <~~ <+ <* <$ </  <+> <*>
+			  ;; <$> </> <|  <||  <||| <|||| <- <-| <-<<-|-> <->>
+			  ;; <<-> <= <=> <<==<<==>=|=>==/==//=!==:=>
+			  ;; << <<< <<<<
+			  ("<" (rx (+ (or "\+" "\*" "\$" "<" ">" ":" "~"  "!"
+					  "-"  "/" "|" "="))))
+			  ;; >: >- >>- >--|-> >>-|-> >= >== >>== >=|=:=>>
+			  ;; >> >>> >>>>
+			  (">" (rx (+ (or ">" "<" "|" "/" ":" "=" "-"))))
+			  ;; #: #= #! #( #? #[ #{ #_ #_( ## ### #####
+			  ("#" (rx (or ":" "=" "!" "(" "\?" "\[" "{" "_(" "_"
+				       (+ "#"))))
+			  ;; ~~ ~~~ ~=  ~-  ~@ ~> ~~>
+			  ("~" (rx (or ">" "=" "-" "@" "~>" (+ "~"))))
+			  ;; __ ___ ____ _|_ __|____|_
+			  ("_" (rx (+ (or "_" "|"))))
+			  ;; Fira code: 0xFF 0x12
+			  ("0" (rx (and "x" (+ (in "A-F" "a-f" "0-9")))))
+			  ;; Fira code:
+			  "Fl"  "Tl"  "fi"  "fj"  "fl"  "ft"
+			  ;; The few not covered by the regexps.
+			  "{|"  "[|"  "]#"  "(*"  "}#"  "$>"  "^="))
   ;; Enables ligature checks globally in all buffers. You can also do it
   ;; per mode with `ligature-mode'.
   (global-ligature-mode t))
@@ -1067,54 +1069,54 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;;                                       )))))
 
 ;; it looks like LSP mode supports sorbet out of the box
-(use-package lsp-mode
-  :commands (lsp lsp-deferred)
-  :init
-  (setq lsp-keymap-prefix "C-c l")
-  ;; orderless completion setup from https://github.com/minad/corfu/wiki#advanced-example-configuration-with-orderless
-  (defun my/orderless-dispatch-flex-first (_pattern index _total)
-    (and (eq index 0) 'orderless-flex))
+;; (use-package lsp-mode
+;;   :commands (lsp lsp-deferred)
+;;   :init
+;;   (setq lsp-keymap-prefix "C-c l")
+;;   ;; orderless completion setup from https://github.com/minad/corfu/wiki#advanced-example-configuration-with-orderless
+;;   (defun my/orderless-dispatch-flex-first (_pattern index _total)
+;;     (and (eq index 0) 'orderless-flex))
 
-  (defun my/lsp-mode-setup-completion ()
-    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(orderless))
-    ;; configure the first word as flex filtered.
-    (add-hook 'orderless-style-dispatchers #'my/orderless-dispatch-flex-first nil 'local)
-    ;; configure the cape-capf-buster.
-    (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point))))
+;;   (defun my/lsp-mode-setup-completion ()
+;;     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+;;	  '(orderless))
+;;     ;; configure the first word as flex filtered.
+;;     (add-hook 'orderless-style-dispatchers #'my/orderless-dispatch-flex-first nil 'local)
+;;     ;; configure the cape-capf-buster.
+;;     (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point))))
 
-  ;; (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
-  ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls copilot-ls))
-  (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls))
-  :config
-  ;; these are emacs settings for lsp performance
-  (setq read-process-output-max (* 1024 1024)) ;; 1mb
-  (setq gc-cons-threshold 100000000) ;; 100mib
+;;   ;; (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
+;;   ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls copilot-ls))
+;;   (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls))
+;;   :config
+;;   ;; these are emacs settings for lsp performance
+;;   (setq read-process-output-max (* 1024 1024)) ;; 1mb
+;;   (setq gc-cons-threshold 100000000) ;; 100mib
 
-  ;; this seems cool but isn't noticeably better than treesitter highlighting
-  ;; (setq lsp-semantic-tokens-enable t)
-  ;; (setq lsp-semantic-tokens-honor-refresh-requests t)
+;;   ;; this seems cool but isn't noticeably better than treesitter highlighting
+;;   ;; (setq lsp-semantic-tokens-enable t)
+;;   ;; (setq lsp-semantic-tokens-honor-refresh-requests t)
 
-  ;; (lsp-register-client
-  ;;  (make-lsp-client :new-connection (lsp-stdio-connection '("bundle" "exec" "rubocop" "--lsp"))
-  ;;                   :activation-fn (lsp-activate-on "ruby")
-  ;;                   :add-on? t
-  ;;                   :server-id 'my-rubocop-ls))
-  ;; (add-to-list 'lsp-language-id-configuration '(yaml-ts-mode . "yaml"))
-  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]tmp\\'")
-  :custom
-  (lsp-completion-provider :none) ;; corfu
-  (lsp-signature-auto-activate nil) ;; this momentarily steals focus and triggers auto-save that runs rubocop because of rubocopfmt-mode
-  (lsp-sorbet-as-add-on t)
-  (lsp-elixir-local-server-command "/usr/lib/elixir-ls/language_server.sh")
-  (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-3.0.16/server/out/eslintServer.js" "--stdio"))
-  (lsp-copilot-enabled t)
-  (lsp-copilot-version "1.357.0")
-  (lsp-copilot-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server")
-  :hook (((graphql-mode js-base-mode ruby-base-mode typescript-ts-base-mode terraform-mode) . lsp-deferred)
-         ;; if you want which-key integration
-         (lsp-mode . lsp-enable-which-key-integration)
-         (lsp-completion-mode . my/lsp-mode-setup-completion)))
+;;   ;; (lsp-register-client
+;;   ;;  (make-lsp-client :new-connection (lsp-stdio-connection '("bundle" "exec" "rubocop" "--lsp"))
+;;   ;;                   :activation-fn (lsp-activate-on "ruby")
+;;   ;;                   :add-on? t
+;;   ;;                   :server-id 'my-rubocop-ls))
+;;   ;; (add-to-list 'lsp-language-id-configuration '(yaml-ts-mode . "yaml"))
+;;   (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]tmp\\'")
+;;   :custom
+;;   (lsp-completion-provider :none) ;; corfu
+;;   (lsp-signature-auto-activate nil) ;; this momentarily steals focus and triggers auto-save that runs rubocop because of rubocopfmt-mode
+;;   (lsp-sorbet-as-add-on t)
+;;   (lsp-elixir-local-server-command "/usr/lib/elixir-ls/language_server.sh")
+;;   (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-3.0.16/server/out/eslintServer.js" "--stdio"))
+;;   (lsp-copilot-enabled t)
+;;   (lsp-copilot-version "1.357.0")
+;;   (lsp-copilot-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server")
+;;   :hook (((graphql-mode js-base-mode ruby-base-mode typescript-ts-base-mode terraform-mode) . lsp-deferred)
+;;	 ;; if you want which-key integration
+;;	 (lsp-mode . lsp-enable-which-key-integration)
+;;	 (lsp-completion-mode . my/lsp-mode-setup-completion)))
 
 ;; (use-package lsp-treemacs)
 ;; (use-package lsp-ui)
@@ -1123,19 +1125,19 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;; npm install @github/copilot-cli in a convenient location and set the server-executable variable below
 ;; since the local project's nodejs version might not be compatible
 ;; https://github.com/copilot-emacs/copilot.el
-(use-package copilot
-  :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el"))
-  :hook (prog-mode . copilot-mode)
-  :bind
-  (:map copilot-completion-map
-        ("TAB" . copilot-accept-completion)
-        ("RET" . copilot-accept-completion)
-        ("C-c C-c" . copilot-accept-completion)
-        ("C-c C-n" . copilot-next-completion)
-        ("C-c C-p" . copilot-previous-completion)
-        ("C-c C-l" . copilot-clear-overlay))
-  :custom
-  (copilot-server-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server"))
+;; (use-package copilot
+;;   :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el"))
+;;   :hook (prog-mode . copilot-mode)
+;;   :bind
+;;   (:map copilot-completion-map
+;;         ("TAB" . copilot-accept-completion)
+;;         ("RET" . copilot-accept-completion)
+;;         ("C-c C-c" . copilot-accept-completion)
+;;         ("C-c C-n" . copilot-next-completion)
+;;         ("C-c C-p" . copilot-previous-completion)
+;;         ("C-c C-l" . copilot-clear-overlay))
+;;   :custom
+;;   (copilot-server-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server"))
 
 ;; flycheck mode to highlight warnings and errors in code
 ;; https://www.flycheck.org/en/latest
@@ -1186,13 +1188,13 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
    '(markdown-pre-face ((t nil))))
 
   (setq markdown-command "pandoc --standalone --mathjax --from=gfm"
-        markdown-disable-tooltip-prompt t
-        markdown-fontify-code-blocks-natively t))
+	markdown-disable-tooltip-prompt t
+	markdown-fontify-code-blocks-natively t))
 
 ;; switch to yaml-mode package, because built-in yaml-ts-mode sucks
 (use-package yaml-mode
   :mode ("\\.yml$"
-         "\\.yaml$"))
+	 "\\.yaml$"))
 
 (use-package dockerfile-ts-mode
   :straight nil
@@ -1206,14 +1208,14 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (interactive (list (when current-prefix-arg (read-char "Separator: "))))
   (font-lock-mode 1)
   (let* ((separator (or separator ?\,))
-         (n (count-matches (string separator) (pos-bol) (pos-eol)))
-         (colors (cl-loop for i from 0 to 1.0 by (/ 2.0 n)
-                          collect (apply #'color-rgb-to-hex
-                                         (color-hsl-to-rgb i 0.3 0.5)))))
+	 (n (count-matches (string separator) (pos-bol) (pos-eol)))
+	 (colors (cl-loop for i from 0 to 1.0 by (/ 2.0 n)
+			  collect (apply #'color-rgb-to-hex
+					 (color-hsl-to-rgb i 0.3 0.5)))))
     (cl-loop for i from 2 to n by 2
-             for c in colors
-             for r = (format "^\\([^%c\n]+%c\\)\\{%d\\}" separator separator i)
-             do (font-lock-add-keywords nil `((,r (1 '(face (:foreground ,c)))))))))
+	     for c in colors
+	     for r = (format "^\\([^%c\n]+%c\\)\\{%d\\}" separator separator i)
+	     do (font-lock-add-keywords nil `((,r (1 '(face (:foreground ,c)))))))))
   :hook
   ((csv-mode . +csv-highlight)
    (csv-mode . csv-align-mode)
@@ -1227,15 +1229,15 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;; https://web-mode.org/
 (use-package web-mode
   :mode ("\\.erb$"
-         "\\.html$"
-         "\\.php$"
-         "\\.rhtml$")
+	 "\\.html$"
+	 "\\.php$"
+	 "\\.rhtml$")
 
   :config
   (setq web-mode-markup-indent-offset 2
-        web-mode-css-indent-offset 2
-        web-mode-code-indent-offset 2
-        web-mode-indent-style 2))
+	web-mode-css-indent-offset 2
+	web-mode-code-indent-offset 2
+	web-mode-indent-style 2))
 
 ;; config here is from HRS with a few changes
 ;; https://github.com/pezra/rspec-mode/
@@ -1244,13 +1246,13 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ;; :ensure-system-package (rspec . "gem install rspec")
 
   :hook (css-mode
-         deadgrep-mode
-         js-mode
-         magit-status-mode
-         ruby-base-mode
-         scss-mode
-         web-mode
-         yard-mode)
+	 deadgrep-mode
+	 js-mode
+	 magit-status-mode
+	 ruby-base-mode
+	 scss-mode
+	 web-mode
+	 yard-mode)
 
   :config
   (defvar +rspec-outline-blocks
@@ -1267,17 +1269,17 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
     "Use `occur' to create a linked outline of the spec associated with the current file, which may be either a spec or a target."
     (interactive)
     (let ((list-matching-lines-face nil)
-          (spec-buffer (if (rspec-buffer-is-spec-p)
-                           (current-buffer)
-                         (find-file-noselect (rspec-spec-file-for (buffer-file-name))))))
+	  (spec-buffer (if (rspec-buffer-is-spec-p)
+			   (current-buffer)
+			 (find-file-noselect (rspec-spec-file-for (buffer-file-name))))))
       (with-current-buffer spec-buffer
-        (occur (rx-to-string `(seq line-start
-                                   (zero-or-more whitespace)
-                                   (optional "RSpec.")
-                                   (or ,@+rspec-outline-blocks)
-                                   (one-or-more whitespace)
-                                   (or "\"" "'" "A-Z" "{ ")))
-               0)))
+	(occur (rx-to-string `(seq line-start
+				   (zero-or-more whitespace)
+				   (optional "RSpec.")
+				   (or ,@+rspec-outline-blocks)
+				   (one-or-more whitespace)
+				   (or "\"" "'" "A-Z" "{ ")))
+	       0)))
     (occur-rename-buffer))
 
   ;; This is for packwerk vvv
@@ -1302,8 +1304,8 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ;;                 a-file-name))
   ;; ^^^ packwerk
   :bind (:map rspec-verifiable-mode-keymap
-              ("s" . rspec-verify-single)
-              ("o" . +rspec-outline))
+	      ("s" . rspec-verify-single)
+	      ("o" . +rspec-outline))
   ;; :custom
   ;; this is for Gusto/zenpayroll where the binstub takes care of bundler and spring
   ;; (rspec-use-spring-when-possible nil)
@@ -1336,9 +1338,9 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 (defun +activate-ruby-tests-mode ()
   (if (+current-project-uses-minitest-p)
       (progn
-        (minitest-mode 1)
-        (rspec-mode 0)
-        (rspec-verifiable-mode 0))
+	(minitest-mode 1)
+	(rspec-mode 0)
+	(rspec-verifiable-mode 0))
     (progn
       (minitest-mode 0)
       (rspec-mode 1)
@@ -1368,14 +1370,14 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 
 ;; I'd like to run rubocop manually until I can figure out how to get the lsp to do it
 ;; (figured it out, but it requires the lsp to be in the bundle, which will be hard to manage. lsp-format-buffer)
-(use-package rubocop)
+;; (use-package rubocop)
 
 ;; autoformat with rubocop via the lsp. We'll see
-(use-package rubocopfmt
-  :hook
-  (ruby-base-mode . rubocopfmt-mode)
-  :custom
-  (rubocopfmt-on-save-use-lsp-format-buffer t))
+;; (use-package rubocopfmt
+;;   :hook
+;;   (ruby-base-mode . rubocopfmt-mode)
+;;   :custom
+;;   (rubocopfmt-on-save-use-lsp-format-buffer t))
 
 ;;;;;;;;;;;;;;;;
 ;; Javascript ;;
@@ -1410,9 +1412,9 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (jest-unsaved-buffers-behavior 'save-current)
   :bind
   (:map jest-minor-mode-map
-        (("C-c , v" . jest-file)
-         ("C-c , r" . jest-repeat)
-         ("C-c , RET" . jest-popup)))
+	(("C-c , v" . jest-file)
+	 ("C-c , r" . jest-repeat)
+	 ("C-c , RET" . jest-popup)))
   :hook (typescript-ts-base-mode . jest-minor-mode))
 
 (use-package graphql-mode
@@ -1453,6 +1455,9 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("f87c86fa3d38be32dc557ba3d4cedaaea7bc3d97ce816c0e518dfe9633250e34"
+     default))
  '(safe-local-variable-values '((encoding . utf-8))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
