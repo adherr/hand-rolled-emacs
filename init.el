@@ -1182,7 +1182,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 (use-package markdown-mode
   ;; :ensure-system-package pandoc
   :commands gfm-mode
-  :mode (("\\.md$" . gfm-mode))
+  :mode (("\\.md\\'" . gfm-mode))
   :config
   (custom-set-faces
    '(markdown-pre-face ((t nil))))
@@ -1192,9 +1192,9 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 	markdown-fontify-code-blocks-natively t))
 
 ;; switch to yaml-mode package, because built-in yaml-ts-mode sucks
+;; why doesn't this work :'(
 (use-package yaml-mode
-  :mode ("\\.yml$"
-	 "\\.yaml$"))
+  :mode ("\\.ya?ml\\'" ))
 
 (use-package dockerfile-ts-mode
   :straight nil
@@ -1378,6 +1378,12 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;;   (ruby-base-mode . rubocopfmt-mode)
 ;;   :custom
 ;;   (rubocopfmt-on-save-use-lsp-format-buffer t))
+
+;; slim templates? ugh
+;; https://github.com/slim-template/emacs-slim
+;; (use-package slim-mode
+;;	     :straight (:host github :repo "slim-template/emacs-slim")
+;;	     :mode ("\\.slim\\'" . slim-mode))
 
 ;;;;;;;;;;;;;;;;
 ;; Javascript ;;
