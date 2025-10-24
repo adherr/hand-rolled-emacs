@@ -51,7 +51,7 @@
 	;; Only set after LIBRARY_PATH can find gcc libraries.
 	(setq comp-deferred-compilation t))
     (message "Native comp is *not* available"))
-  (dolist (var '("LANG" "LC_CTYPE" "LIBRARY_PATH" "LSP_USE_PLISTS"))
+  (dolist (var '("LANG" "LC_CTYPE" "LIBRARY_PATH" "LSP_USE_PLISTS" "SSH_AUTH_SOCK"))
     (add-to-list 'exec-path-from-shell-variables var)))
 
 (defvar line-length 120)
