@@ -1069,57 +1069,58 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;;                                       )))))
 
 ;; it looks like LSP mode supports sorbet out of the box
-;; (use-package lsp-mode
-;;   :commands (lsp lsp-deferred)
-;;   :init
-;;   (setq lsp-keymap-prefix "C-c l")
-;;   ;; orderless completion setup from https://github.com/minad/corfu/wiki#advanced-example-configuration-with-orderless
-;;   (defun my/orderless-dispatch-flex-first (_pattern index _total)
-;;     (and (eq index 0) 'orderless-flex))
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  ;; orderless completion setup from https://github.com/minad/corfu/wiki#advanced-example-configuration-with-orderless
+  (defun my/orderless-dispatch-flex-first (_pattern index _total)
+    (and (eq index 0) 'orderless-flex))
 
-;;   (defun my/lsp-mode-setup-completion ()
-;;     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-;;	  '(orderless))
-;;     ;; configure the first word as flex filtered.
-;;     (add-hook 'orderless-style-dispatchers #'my/orderless-dispatch-flex-first nil 'local)
-;;     ;; configure the cape-capf-buster.
-;;     (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point))))
+  (defun my/lsp-mode-setup-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+	  '(orderless))
+    ;; configure the first word as flex filtered.
+    (add-hook 'orderless-style-dispatchers #'my/orderless-dispatch-flex-first nil 'local)
+    ;; configure the cape-capf-buster.
+    (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point))))
 
-;;   ;; (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
-;;   ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls copilot-ls))
-;;   (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls))
-;;   :config
-;;   ;; these are emacs settings for lsp performance
-;;   (setq read-process-output-max (* 1024 1024)) ;; 1mb
-;;   (setq gc-cons-threshold 100000000) ;; 100mib
+  ;; (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
+  ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls copilot-ls))
+  ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls))
+  (setq lsp-enabled-clients '(ts-ls eslint tfmls metals))
+  :config
+  ;; these are emacs settings for lsp performance
+  (setq read-process-output-max (* 1024 1024)) ;; 1mb
+  (setq gc-cons-threshold 100000000) ;; 100mib
 
-;;   ;; this seems cool but isn't noticeably better than treesitter highlighting
-;;   ;; (setq lsp-semantic-tokens-enable t)
-;;   ;; (setq lsp-semantic-tokens-honor-refresh-requests t)
+  ;; this seems cool but isn't noticeably better than treesitter highlighting
+  ;; (setq lsp-semantic-tokens-enable t)
+  ;; (setq lsp-semantic-tokens-honor-refresh-requests t)
 
-;;   ;; (lsp-register-client
-;;   ;;  (make-lsp-client :new-connection (lsp-stdio-connection '("bundle" "exec" "rubocop" "--lsp"))
-;;   ;;                   :activation-fn (lsp-activate-on "ruby")
-;;   ;;                   :add-on? t
-;;   ;;                   :server-id 'my-rubocop-ls))
-;;   ;; (add-to-list 'lsp-language-id-configuration '(yaml-ts-mode . "yaml"))
-;;   (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]tmp\\'")
-;;   :custom
-;;   (lsp-completion-provider :none) ;; corfu
-;;   (lsp-signature-auto-activate nil) ;; this momentarily steals focus and triggers auto-save that runs rubocop because of rubocopfmt-mode
-;;   (lsp-sorbet-as-add-on t)
-;;   (lsp-elixir-local-server-command "/usr/lib/elixir-ls/language_server.sh")
-;;   (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-3.0.16/server/out/eslintServer.js" "--stdio"))
-;;   (lsp-copilot-enabled t)
-;;   (lsp-copilot-version "1.357.0")
-;;   (lsp-copilot-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server")
-;;   :hook (((graphql-mode js-base-mode ruby-base-mode typescript-ts-base-mode terraform-mode) . lsp-deferred)
-;;	 ;; if you want which-key integration
-;;	 (lsp-mode . lsp-enable-which-key-integration)
-;;	 (lsp-completion-mode . my/lsp-mode-setup-completion)))
+  ;; (lsp-register-client
+  ;;  (make-lsp-client :new-connection (lsp-stdio-connection '("bundle" "exec" "rubocop" "--lsp"))
+  ;;                   :activation-fn (lsp-activate-on "ruby")
+  ;;                   :add-on? t
+  ;;                   :server-id 'my-rubocop-ls))
+  ;; (add-to-list 'lsp-language-id-configuration '(yaml-ts-mode . "yaml"))
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]tmp\\'")
+  :custom
+  (lsp-completion-provider :none) ;; corfu
+  (lsp-signature-auto-activate nil) ;; this momentarily steals focus and triggers auto-save that runs rubocop because of rubocopfmt-mode
+  ;; (lsp-sorbet-as-add-on t)
+  ;; (lsp-elixir-local-server-command "/usr/lib/elixir-ls/language_server.sh")
+  ;; (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-3.0.16/server/out/eslintServer.js" "--stdio"))
+  ;; (lsp-copilot-enabled t)
+  ;; (lsp-copilot-version "1.357.0")
+  ;; (lsp-copilot-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server")
+  :hook (((js-base-mode typescript-ts-base-mode terraform-mode scala-mode) . lsp-deferred)
+	 ;; if you want which-key integration
+	 (lsp-mode . lsp-enable-which-key-integration)
+	 (lsp-completion-mode . my/lsp-mode-setup-completion)))
 
-;; (use-package lsp-treemacs)
-;; (use-package lsp-ui)
+(use-package lsp-treemacs)
+(use-package lsp-ui)
 
 ;; GH CoPilot??
 ;; npm install @github/copilot-cli in a convenient location and set the server-executable variable below
@@ -1457,7 +1458,6 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ("scala" . scala-mode))
 
 (use-package lsp-metals
-  :ensure t
   :custom
   ;; You might set metals server options via -J arguments. This might not always work, for instance when
   ;; metals is installed using nix. In this case you can use JAVA_TOOL_OPTIONS environment variable.
@@ -1472,8 +1472,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ;; `lsp-semantic-tokens-enable' variable. Also you might want to disable highlighting of modifiers
   ;; setting `lsp-semantic-tokens-apply-modifiers' to `nil' because metals sends `abstract' modifier
   ;; which is mapped to `keyword' face.
-  (lsp-metals-enable-semantic-highlighting t)
-  :hook (scala-mode . lsp))
+  (lsp-metals-enable-semantic-highlighting t))
 
 
 ;;;;;;;;;;;;;;;;
