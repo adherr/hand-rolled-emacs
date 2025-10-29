@@ -1143,6 +1143,37 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 (use-package flycheck
   :init (global-flycheck-mode))
 
+
+;; on MacOS Sequoia++, treesit-language-available-p is super slow see https://github.com/renzmann/treesit-auto/issues/135
+;; This is the solution linked there, from https://github.com/jeremyf/dotemacs/blob/75410e2f56273b2be4abf10d0d72627ec4ad6a85/emacs.d/init.el#L5176-L5197
+(use-package treesit
+  :straight (:type built-in)
+  :init
+  (setopt treesit-font-lock-level 4)
+  :config
+  (defvar jf/treesit-lang-cache
+    (make-hash-table :test 'equal)
+    "Cache the expensive computation of treelit language availability.
+
+See `jf/treesit-language-available-p' for usage.")
+
+  (defun jf/treesit-language-available-p (fn lang &rest rest)
+    "Caching around the CPU expensive `treesit-language-available-p'."
+    ;; I did some profiling of `treesit-language-available-p', and found
+    ;; that when moving around via consult (and therefore preview) this
+    ;; function was contributing to 75% of the CPU time.  And it was run
+    ;; each time.
+    (let ((cached-value
+	    (gethash lang jf/treesit-lang-cache 'miss)))
+      (if (eq 'miss cached-value)
+	(let ((value
+		(apply fn lang rest)))
+	  (puthash lang value jf/treesit-lang-cache)
+	  value)
+	cached-value)))
+  (advice-add #'treesit-language-available-p
+    :around #'jf/treesit-language-available-p))
+
 ;; get the treesit goodness without specifying grammar download locations or major mode translations
 ;; REMEMBER that hooks don't transfer to the ts mode
 (use-package treesit-auto
