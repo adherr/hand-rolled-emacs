@@ -1531,7 +1531,8 @@ See `jf/treesit-language-available-p' for usage.")
  '(custom-safe-themes
    '("f87c86fa3d38be32dc557ba3d4cedaaea7bc3d97ce816c0e518dfe9633250e34"
      default))
- '(safe-local-variable-values '((encoding . utf-8))))
+ '(safe-local-variable-values
+   '((git-link-default-branch . "master") (encoding . utf-8))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
