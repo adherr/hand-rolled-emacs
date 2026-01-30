@@ -1517,6 +1517,12 @@ See `jf/treesit-language-available-p' for usage.")
 ;; Other misc modes ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 (use-package terraform-mode)
+
+;; https://gitlab.com/bricka/emacs-kotlin-ts-mode
+(use-package kotlin-ts-mode
+  :straight (:host gitlab :repo "bricka/emacs-kotlin-ts-mode")
+  :mode "\\.kt\\'")
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
