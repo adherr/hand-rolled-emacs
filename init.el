@@ -296,6 +296,7 @@
    ;; ("M-/" . hippie-expand) ;; replaced with dabbrev expand and corfu
    ("C-x O" . (lambda () (interactive)
 		(other-window -1)))
+   ("M-`" . other-frame)
    ("s-[" . (lambda () (interactive) (insert-char #x201c)))
    ("s-{" . (lambda () (interactive) (insert-char #x201d)))
    ("s-]" . (lambda () (interactive) (insert-char #x2018)))
