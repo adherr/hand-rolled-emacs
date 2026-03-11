@@ -337,7 +337,11 @@
 
   ;; emoji
   :if (fboundp 'set-fontset-font)
-  :config (set-fontset-font t 'unicode "Apple Color Emoji" nil 'prepend)
+  :config
+  (set-fontset-font t 'unicode "Apple Color Emoji" nil 'prepend)
+  ;; Override ranges used by Claude Code's UI (⏺ ⊕ ◆ ⠋ etc.) back to monospace
+  ;; These get incorrectly caught by the broad 'unicode Apple Color Emoji entry above
+  (set-fontset-font t '(#x2200 . #x2BFF) "Plex Mono" nil 'prepend)
   )
 ;; end MacOS
 
@@ -389,9 +393,11 @@
   :config
   (which-key-mode))
 
-;; let's vterm for getting a terminal in emacs
 ;; https://github.com/akermu/emacs-libvterm
-;; (use-package vterm)
+(use-package vterm
+  :custom
+  (vterm-kill-buffer-on-exit t)
+  (vterm-shell (or (executable-find "zsh") shell-file-name)))
 
 ;; a better terminal emulator for emacs?
 ;; https://codeberg.org/akib/emacs-eat
@@ -1140,6 +1146,21 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;;   :custom
 ;;   (copilot-server-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server"))
 
+;; Claude code IDE in emacs
+;; https://github.com/manzaltu/claude-code-ide.el
+(use-package claude-code-ide
+  :straight (:type git :host github :repo "manzaltu/claude-code-ide.el")
+  :bind ("C-c C-'" . claude-code-ide-menu)
+  :config
+  (claude-code-ide-emacs-tools-setup)
+  (setq claude-code-ide-mcp-server-tools
+        (seq-filter (lambda (tool)
+                      (member (plist-get tool :name)
+                              '("claude-code-ide-mcp-xref-find-references"
+                                "claude-code-ide-mcp-project-info"
+                                "claude-code-ide-mcp-imenu-list-symbols")))
+                      claude-code-ide-mcp-server-tools)))
+
 ;; flycheck mode to highlight warnings and errors in code
 ;; https://www.flycheck.org/en/latest
 (use-package flycheck
@@ -1174,7 +1195,60 @@ See `jf/treesit-language-available-p' for usage.")
 	  value)
 	cached-value)))
   (advice-add #'treesit-language-available-p
-    :around #'jf/treesit-language-available-p))
+    :around #'jf/treesit-language-available-p)
+  (setq treesit-language-source-alist
+    '((awk        "https://github.com/Beaglefoot/tree-sitter-awk")
+      (bash       "https://github.com/tree-sitter/tree-sitter-bash")
+      (bibtex     "https://github.com/latex-lsp/tree-sitter-bibtex")
+      (blueprint  "https://github.com/huanie/tree-sitter-blueprint")
+      (c          "https://github.com/tree-sitter/tree-sitter-c")
+      (c-sharp    "https://github.com/tree-sitter/tree-sitter-c-sharp")
+      (clojure    "https://github.com/sogaiu/tree-sitter-clojure")
+      (cmake      "https://github.com/uyha/tree-sitter-cmake")
+      (commonlisp "https://github.com/tree-sitter-grammars/tree-sitter-commonlisp")
+      (cpp        "https://github.com/tree-sitter/tree-sitter-cpp")
+      (css        "https://github.com/tree-sitter/tree-sitter-css")
+      (dart       "https://github.com/ast-grep/tree-sitter-dart")
+      (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+      (elixir     "https://github.com/elixir-lang/tree-sitter-elixir")
+      (glsl       "https://github.com/tree-sitter-grammars/tree-sitter-glsl")
+      (go         "https://github.com/tree-sitter/tree-sitter-go")
+      (gomod      "https://github.com/camdencheek/tree-sitter-go-mod")
+      (heex       "https://github.com/phoenixframework/tree-sitter-heex")
+      (html       "https://github.com/tree-sitter/tree-sitter-html")
+      (janet      "https://github.com/sogaiu/tree-sitter-janet-simple")
+      (java       "https://github.com/tree-sitter/tree-sitter-java")
+      (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master")
+      (json       "https://github.com/tree-sitter/tree-sitter-json")
+      (julia      "https://github.com/tree-sitter/tree-sitter-julia")
+      (kotlin     "https://github.com/fwcd/tree-sitter-kotlin")
+      (lua        "https://github.com/tree-sitter-grammars/tree-sitter-lua")
+      (magik      "https://github.com/krn-robin/tree-sitter-magik")
+      (make       "https://github.com/tree-sitter-grammars/tree-sitter-make")
+      (nickel     "https://github.com/nickel-lang/tree-sitter-nickel")
+      (nix        "https://github.com/nix-community/tree-sitter-nix")
+      (nu         "https://github.com/nushell/tree-sitter-nu")
+      (org        "https://github.com/milisims/tree-sitter-org")
+      (perl       "https://github.com/ganezdragon/tree-sitter-perl")
+      (proto      "https://github.com/mitchellh/tree-sitter-proto")
+      (python     "https://github.com/tree-sitter/tree-sitter-python")
+      (r          "https://github.com/r-lib/tree-sitter-r")
+      (ruby       "https://github.com/tree-sitter/tree-sitter-ruby")
+      (rust       "https://github.com/tree-sitter/tree-sitter-rust")
+      (scala      "https://github.com/tree-sitter/tree-sitter-scala")
+      (sql        "https://github.com/DerekStride/tree-sitter-sql" "gh-pages")
+      (surface    "https://github.com/connorlay/tree-sitter-surface")
+      (toml       "https://github.com/tree-sitter/tree-sitter-toml")
+      (tsx        "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+      (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+      (typst      "https://github.com/uben0/tree-sitter-typst" "master")
+      (verilog    "https://github.com/gmlarumbe/tree-sitter-verilog")
+      (vhdl       "https://github.com/alemuller/tree-sitter-vhdl")
+      (vue        "https://github.com/tree-sitter-grammars/tree-sitter-vue")
+      (wast       "https://github.com/wasm-lsp/tree-sitter-wasm" nil "wast/src")
+      (wat        "https://github.com/wasm-lsp/tree-sitter-wasm" nil "wat/src")
+      (wgsl       "https://github.com/mehmetoguzderin/tree-sitter-wgsl")
+      (yaml       "https://github.com/tree-sitter-grammars/tree-sitter-yaml"))))
 
 ;; get the treesit goodness without specifying grammar download locations or major mode translations
 ;; REMEMBER that hooks don't transfer to the ts mode
