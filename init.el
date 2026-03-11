@@ -541,46 +541,6 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (("s-w" . ace-window)
    ("C-x 4 o" . +ace-window-prefix)))
 
-;; (use-package swiper
-;;   :bind
-;;   (("C-s" . swiper-isearch)))
-
-;; (use-package ivy
-;;   ;; :diminish (ivy-mode . "")             ; does not display ivy in the modeline
-;;   :init
-;;   (ivy-mode 1)                          ; enable ivy globally at startup
-;;   :config
-;;   (setq ivy-use-virtual-buffers t)       ; extend searching to bookmarks and
-;;   (setq ivy-wrap t)
-;;   (setq ivy-height 20)                   ; set height of the ivy window
-;;   (setq ivy-count-format "(%d/%d) ")     ; count format, from the ivy help page
-;;   (setq ivy-display-style 'fancy)
-;;   :bind
-;;   (("<f6>" . ivy-resume)))
-
-;; (use-package counsel
-;;   :bind
-;;   (("M-x" . counsel-M-x)
-;;    ("M-y" . counsel-yank-pop)
-;;    ("C-x C-f" . counsel-find-file)
-;;    ("C-h a" . counsel-apropos)
-;;    ("C-h f" . counsel-describe-function)
-;;    ("C-h o" . counsel-describe-symbol)
-;;    ("C-h v" . counsel-describe-variable)
-;;    ("<f2> i" . counsel-info-lookup-symbol)
-;;    ("<f2> u" . counsel-unicode-char))
-;;   ;;:bind (:map minibuffer-local-map ("C-r" . counsel-minibuffer-history))
-;;   )
-
-;; replaced with vertico history sort!
-;; alternative M-x with history and sorting
-;; it's not really editorish, but ivy needs to be loaded first
-;; https://github.com/DarwinAwardWinner/amx
-;; (use-package amx
-;;   :config
-;;   (setq-default amx-save-file (expand-file-name "amx-history" savefile-dir))
-;;   (amx-mode))
-
 ;; replace ivy with vertico. It does one thing well rather than replacing all of the commands
 (use-package vertico
   :init (vertico-mode)
@@ -744,27 +704,6 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ("C-h f" . helpful-callable)
   ("C-h v" . helpful-variable)
   ("C-h k" . helpful-key))
-
-;; company to complete anywhere
-;; (use-package company
-;;   :hook (prog-mode . company-mode)
-;;   :bind (:map company-active-map
-;;               ("<tab>" . company-complete-selection))
-
-;;   :custom
-;;   (company-backends '((company-capf company-dabbrev-code)))
-;;   (company-idle-delay 0.2)
-;;   (company-minimum-prefix-length 3)
-;;   (company-tooltip-align-annotations t)
-;;   (company-tooltip-limit 20)
-
-;;   :config
-;;   (setq lsp-completion-provider :capf))
-
-;; ;; a new frontend that's hopefully better. suggested by lsp-mode
-;; ;; https://github.com/sebastiencs/company-box
-;; (use-package company-box
-;;   :hook (company-mode . company-box-mode))
 
 ;; completion at point with a popup
 ;; https://github.com/minad/corfu
