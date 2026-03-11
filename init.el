@@ -53,6 +53,10 @@
     (add-to-list 'exec-path-from-shell-variables var)))
 
 (defvar line-length 120)
+;; redirect custom to its own file so it doesn't pollute init.el
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(load custom-file 'noerror)
+
 ;; base Emacs config
 (use-package emacs
   :config
@@ -1598,22 +1602,3 @@ See `jf/treesit-language-available-p' for usage.")
   :straight (:host gitlab :repo "bricka/emacs-kotlin-ts-mode")
   :mode "\\.kt\\'")
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   '("f87c86fa3d38be32dc557ba3d4cedaaea7bc3d97ce816c0e518dfe9633250e34"
-     default))
- '(org-agenda-files
-   '("~/src/focused/drafthouse/notes/scott.org"
-     "/Users/andrewherr/src/focused/drafthouse/notes/inbox.org"))
- '(safe-local-variable-values
-   '((git-link-default-branch . "master") (encoding . utf-8))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(markdown-pre-face ((t nil))))
