@@ -316,7 +316,8 @@
   ;; enable some really cool extensions like C-x C-j(dired-jump)
   ((dired-load . (lambda () (load "dired-x")))
    ;; cleanup whitespace on save
-   (before-save . whitespace-cleanup))
+   ;; (before-save . whitespace-cleanup)
+   )
   )
 ;; end base emacs
 
@@ -1087,7 +1088,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ;; (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
   ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls copilot-ls))
   ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls))
-  (setq lsp-enabled-clients '(ts-ls eslint tfmls metals))
+  (setq lsp-enabled-clients '(ts-ls eslint tfmls metals kotlin-ls))
   :config
   ;; these are emacs settings for lsp performance
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
@@ -1113,7 +1114,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ;; (lsp-copilot-enabled t)
   ;; (lsp-copilot-version "1.357.0")
   ;; (lsp-copilot-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server")
-  :hook (((js-base-mode typescript-ts-base-mode terraform-mode scala-mode) . lsp-deferred)
+  :hook (((js-base-mode typescript-ts-base-mode terraform-mode scala-mode kotlin-ts-mode) . lsp-deferred)
 	 ;; if you want which-key integration
 	 (lsp-mode . lsp-enable-which-key-integration)
 	 (lsp-completion-mode . my/lsp-mode-setup-completion)))
@@ -1531,6 +1532,9 @@ See `jf/treesit-language-available-p' for usage.")
  '(custom-safe-themes
    '("f87c86fa3d38be32dc557ba3d4cedaaea7bc3d97ce816c0e518dfe9633250e34"
      default))
+ '(org-agenda-files
+   '("~/src/focused/drafthouse/notes/scott.org"
+     "/Users/andrewherr/src/focused/drafthouse/notes/inbox.org"))
  '(safe-local-variable-values
    '((git-link-default-branch . "master") (encoding . utf-8))))
 (custom-set-faces
