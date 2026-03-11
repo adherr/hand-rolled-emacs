@@ -339,9 +339,11 @@
   (use-package server
     :config (unless (server-running-p) (server-start)))
 
-  ;; emoji
+  ;; emoji — target only actual emoji codepoints, avoiding dual text/emoji chars
+  ;; like ⏺ (U+23FA) and ✳ (U+2733) which Core Text would render double-width
   (when (fboundp 'set-fontset-font)
-    (set-fontset-font t 'unicode "Apple Color Emoji" nil 'prepend))
+    (set-fontset-font t '(#x1F000 . #x1FAFF) "Apple Color Emoji" nil 'prepend)
+    (set-fontset-font t '(#x1F1E0 . #x1F1FF) "Apple Color Emoji" nil 'prepend)) ; flags
   )
 ;; end MacOS
 
