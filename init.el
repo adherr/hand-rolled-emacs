@@ -72,7 +72,7 @@
   ;; I'll take the lines too
   (menu-bar-mode -1)
   ;; y or n instead of typing
-  (fset 'yes-or-no-p 'y-or-n-p)
+  (setopt use-short-answers t)
   ;; flash the modeline instead of bell (not sure I need this)
   (setq ring-bell-function
 	(lambda ()
@@ -239,7 +239,7 @@
   (setq ispell-program-name "aspell" ; use aspell instead of ispell
 	ispell-extra-args '("--sug-mode=ultra"))
   (setq text-mode-ispell-word-completion nil)
-  (flyspell-mode +1)
+  (add-hook 'text-mode-hook 'flyspell-mode)
   ;; highlight the current line
   (global-hl-line-mode +1)
   ;; show whitespace
@@ -340,12 +340,8 @@
     :config (unless (server-running-p) (server-start)))
 
   ;; emoji
-  :if (fboundp 'set-fontset-font)
-  :config
-  (set-fontset-font t 'unicode "Apple Color Emoji" nil 'prepend)
-  ;; Override ranges used by Claude Code's UI (⏺ ⊕ ◆ ⠋ etc.) back to monospace
-  ;; These get incorrectly caught by the broad 'unicode Apple Color Emoji entry above
-  (set-fontset-font t '(#x2200 . #x2BFF) "Plex Mono" nil 'prepend)
+  (when (fboundp 'set-fontset-font)
+    (set-fontset-font t 'unicode "Apple Color Emoji" nil 'prepend))
   )
 ;; end MacOS
 
@@ -778,7 +774,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (corfu-auto t)
   (corfu-auto-delay 1)
   (corfu-cycle t)
-  (cofu-quit-no-match t)
+  (corfu-quit-no-match t)
   (corfu-preselect 'valid))
 
 ;; https://github.com/rainstormstudio/nerd-icons.el
@@ -1562,7 +1558,6 @@ See `jf/treesit-language-available-p' for usage.")
   :config
   ;; For complex scala files
   (setq max-lisp-eval-depth 50000)
-  (setq max-specpdl-size 5000)
   :interpreter
   ("scala" . scala-mode))
 
