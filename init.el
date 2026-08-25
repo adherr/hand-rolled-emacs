@@ -1477,6 +1477,14 @@ See `jf/treesit-language-available-p' for usage.")
 (use-package prettier
   :config
   (add-to-list 'prettier-major-mode-parsers '(typescript-ts-base-mode . (typescript babel-ts)))
+  ;; prettier.el spawns node and does require("prettier"); the asdf prettier
+  ;; shim on PATH is irrelevant. Point NODE_PATH at the asdf-managed global
+  ;; node_modules so the require resolves without depending on the npm-root-g
+  ;; fallback inside the spawned node child.
+  (let ((global-modules (string-trim
+                         (shell-command-to-string "npm root -g 2>/dev/null"))))
+    (when (file-directory-p global-modules)
+      (setenv "NODE_PATH" global-modules)))
   (global-prettier-mode))
 
 ;;;;;;;;;;;;
