@@ -1035,7 +1035,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ;; (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
   ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls copilot-ls))
   ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls))
-  (setq lsp-enabled-clients '(ts-ls eslint tfmls metals kotlin-ls))
+  (setq lsp-enabled-clients '(ts-ls eslint tfmls kotlin-ls))
   :config
   ;; these are emacs settings for lsp performance
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
@@ -1061,7 +1061,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ;; (lsp-copilot-enabled t)
   ;; (lsp-copilot-version "1.357.0")
   ;; (lsp-copilot-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server")
-  :hook (((js-base-mode typescript-ts-base-mode terraform-mode scala-mode kotlin-ts-mode) . lsp-deferred)
+  :hook (((js-base-mode typescript-ts-base-mode terraform-mode kotlin-ts-mode) . lsp-deferred)
 	 ;; if you want which-key integration
 	 (lsp-mode . lsp-enable-which-key-integration)
 	 (lsp-completion-mode . my/lsp-mode-setup-completion)))
@@ -1498,35 +1498,6 @@ See `jf/treesit-language-available-p' for usage.")
 ;; I think this is what we want?
 (use-package elixir-ts-mode
   :mode ("\\.ex\\'". elixir-ts-mode))
-
-;;;;;;;;;;;
-;; Scala ;;
-;;;;;;;;;;;
-
-(use-package scala-mode
-  :config
-  ;; For complex scala files
-  (setq max-lisp-eval-depth 50000)
-  :interpreter
-  ("scala" . scala-mode))
-
-(use-package lsp-metals
-  :custom
-  ;; You might set metals server options via -J arguments. This might not always work, for instance when
-  ;; metals is installed using nix. In this case you can use JAVA_TOOL_OPTIONS environment variable.
-  (lsp-metals-server-args '(;; Metals claims to support range formatting by default but it supports range
-			    ;; formatting of multiline strings only. You might want to disable it so that
-			    ;; emacs can use indentation provided by scala-mode.
-			    "-J-Dmetals.allow-multiline-string-formatting=off"
-			    ;; Enable unicode icons. But be warned that emacs might not render unicode
-			    ;; correctly in all cases.
-			    "-J-Dmetals.icons=unicode"))
-  ;; In case you want semantic highlighting. This also has to be enabled in lsp-mode using
-  ;; `lsp-semantic-tokens-enable' variable. Also you might want to disable highlighting of modifiers
-  ;; setting `lsp-semantic-tokens-apply-modifiers' to `nil' because metals sends `abstract' modifier
-  ;; which is mapped to `keyword' face.
-  (lsp-metals-enable-semantic-highlighting t))
-
 
 ;;;;;;;;;;;;;;;;
 ;; Arch Linux ;;
