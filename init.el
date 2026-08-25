@@ -1539,7 +1539,9 @@ See `jf/treesit-language-available-p' for usage.")
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Other misc modes ;;
 ;;;;;;;;;;;;;;;;;;;;;;
-(use-package terraform-mode)
+(use-package terraform-mode
+  :custom
+  (terraform-format-on-save t))
 
 ;; https://gitlab.com/bricka/emacs-kotlin-ts-mode
 (use-package kotlin-ts-mode
