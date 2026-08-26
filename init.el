@@ -93,6 +93,9 @@
 		      "%b"))))
   ;; confirm exit because fat fingers
   (setq confirm-kill-emacs 'y-or-n-p)
+  ;; dotfiles are a symlink farm into a git-controlled repo; always follow
+  ;; without asking, instead of prompting per-buffer on every restore
+  (setq vc-follow-symlinks t)
   ;; I don't think I've ever successfully transposed words, but it's a mess when I open tabs in emacs
   (unbind-key "M-t" global-map)
   ;; desktop saving
@@ -1418,6 +1421,9 @@ See `jf/treesit-language-available-p' for usage.")
 (use-package prettier
   :config
   (add-to-list 'prettier-major-mode-parsers '(typescript-ts-base-mode . (typescript babel-ts)))
+  ;; prettier has no shell parser; formatting sh-mode buffers would need
+  ;; prettier-plugin-sh + shfmt, neither of which is installed.
+  (setq prettier-major-mode-parsers (assq-delete-all 'sh-mode prettier-major-mode-parsers))
   ;; prettier.el spawns node and does require("prettier"); the asdf prettier
   ;; shim on PATH is irrelevant. Point NODE_PATH at the asdf-managed global
   ;; node_modules so the require resolves without depending on the npm-root-g
