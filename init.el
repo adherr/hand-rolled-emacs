@@ -1020,7 +1020,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
     ;; configure the cape-capf-buster.
     (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point))))
 
-  (setq lsp-enabled-clients '(ts-ls eslint tfmls ruby-lsp-ls))
+  (setq lsp-enabled-clients '(ts-ls eslint tfmls ruby-lsp-ls ty-ls ruff))
   :config
   ;; these are emacs settings for lsp performance
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
@@ -1040,7 +1040,10 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :custom
   (lsp-completion-provider :none) ;; corfu
   (lsp-signature-auto-activate nil) ;; this momentarily steals focus and triggers auto-save that runs rubocop because of rubocopfmt-mode
-  :hook (((js-base-mode typescript-ts-base-mode terraform-mode ruby-base-mode) . lsp-deferred)
+  ;; lsp-ruff.el's default [] for lint-select serializes as JSON [] (select zero rules),
+  ;; not "no override" — ruff then ignores pyproject.toml and reports nothing. nil -> JSON null fixes it.
+  (lsp-ruff-lint-select nil)
+  :hook (((js-base-mode typescript-ts-base-mode terraform-mode ruby-base-mode python-base-mode) . lsp-deferred)
 	 ;; if you want which-key integration
 	 (lsp-mode . lsp-enable-which-key-integration)
 	 (lsp-completion-mode . my/lsp-mode-setup-completion)))
