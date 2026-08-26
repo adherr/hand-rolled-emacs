@@ -419,16 +419,43 @@
 
 
 ;; https://github.com/dakra/ghostel
-(use-package ghostel)
+(use-package ghostel
+  :config
+  ;; ghostel-mode's cursor-type is entirely terminal-driven (DECSCUSR), with
+  ;; no frame-focus awareness; ghostel--buffer-focused-p is the same internal
+  ;; predicate ghostel itself uses for terminal focus escapes (ghostel--).
+  (defun my/ghostel-refresh-cursor-focus (&rest _)
+    (dolist (buf (buffer-list))
+      (when (buffer-live-p buf)
+        (with-current-buffer buf
+          (when (derived-mode-p 'ghostel-mode)
+            (ghostel--apply-cursor-style))))))
+  (advice-add 'ghostel--apply-cursor-style :after
+              (lambda ()
+                (unless (ghostel--buffer-focused-p (current-buffer))
+                  (setq cursor-type 'hollow))))
+  ;; Same hooks ghostel--focus-change itself uses, so window selection
+  ;; changes within a frame (not just frame focus) refresh the cursor too.
+  (add-function :after after-focus-change-function #'my/ghostel-refresh-cursor-focus)
+  (add-hook 'window-selection-change-functions #'my/ghostel-refresh-cursor-focus)
+  (add-hook 'window-buffer-change-functions #'my/ghostel-refresh-cursor-focus))
+
+;; ghostel-compile/-comint are separate features ghostel.el requires
+;; internally; straight installs each as its own package sharing the same
+;; repo checkout, but without an explicit :files their build dirs miss
+;; etc/terminfo (only the main `ghostel' recipe on MELPA has that), which is
+;; what triggers the "Bundled terminfo not found" warning.
 
 ;; use ghostel for compile buffers
 (use-package ghostel-compile
-  :straight (:type git :host github :repo "dakra/ghostel")
+  :straight (:type git :host github :repo "dakra/ghostel"
+             :files (:defaults "etc" "src" "vendor" "build.zig" "build.zig.zon" "symbols.map"))
   :hook (after-init . ghostel-compile-global-mode))
 
 ;; use ghostel for comint buffers
 (use-package ghostel-comint
-  :straight (:type git :host github :repo "dakra/ghostel")
+  :straight (:type git :host github :repo "dakra/ghostel"
+             :files (:defaults "etc" "src" "vendor" "build.zig" "build.zig.zon" "symbols.map"))
   :hook (after-init . ghostel-comint-global-mode))
 
 ;;; EDITORish things vvv
