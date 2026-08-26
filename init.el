@@ -475,6 +475,10 @@
 ;; and on windows switch
 (use-package super-save
   :config
+  ;; window-selection-change-functions fires after the selection has already
+  ;; moved, so a current-buffer-only save would save the window you land on,
+  ;; not the one you switched away from.
+  (setq super-save-all-buffers t)
   (setq super-save-actions '(ace-window
 			     avy-goto-char-timer
 			     avy-goto-line
@@ -1421,15 +1425,11 @@ See `jf/treesit-language-available-p' for usage.")
 (use-package prettier
   :config
   (add-to-list 'prettier-major-mode-parsers '(typescript-ts-base-mode . (typescript babel-ts)))
-  ;; prettier has no shell parser; formatting sh-mode buffers would need
-  ;; prettier-plugin-sh + shfmt, neither of which is installed.
-  (setq prettier-major-mode-parsers (assq-delete-all 'sh-mode prettier-major-mode-parsers))
-  ;; prettier.el spawns node and does require("prettier"); the asdf prettier
-  ;; shim on PATH is irrelevant. Point NODE_PATH at the asdf-managed global
-  ;; node_modules so the require resolves without depending on the npm-root-g
-  ;; fallback inside the spawned node child.
-  (let ((global-modules (string-trim
-                         (shell-command-to-string "npm root -g 2>/dev/null"))))
+  ;; Resolve mise's node explicitly: ambient PATH can resolve to Homebrew's
+  ;; node instead, but NODE_PATH is honored regardless of which node runs.
+  (let* ((mise-node (string-trim
+                     (shell-command-to-string "mise where node 2>/dev/null")))
+         (global-modules (expand-file-name "lib/node_modules" mise-node)))
     (when (file-directory-p global-modules)
       (setenv "NODE_PATH" global-modules)))
   (global-prettier-mode))
