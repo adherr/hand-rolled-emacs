@@ -418,6 +418,19 @@
 
 
 
+;; https://github.com/dakra/ghostel
+(use-package ghostel)
+
+;; use ghostel for compile buffers
+(use-package ghostel-compile
+  :straight (:type git :host github :repo "dakra/ghostel")
+  :hook (after-init . ghostel-compile-global-mode))
+
+;; use ghostel for comint buffers
+(use-package ghostel-comint
+  :straight (:type git :host github :repo "dakra/ghostel")
+  :hook (after-init . ghostel-comint-global-mode))
+
 ;;; EDITORish things vvv
 
 ;; undo-tree
@@ -1065,6 +1078,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :bind ("C-c C-'" . claude-code-ide-menu)
   :config
   (claude-code-ide-emacs-tools-setup)
+  (setq claude-code-ide-terminal-backend 'ghostel)
   (setq claude-code-ide-mcp-server-tools
         (seq-filter (lambda (tool)
                       (member (plist-get tool :name)
