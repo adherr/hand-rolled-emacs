@@ -1004,18 +1004,6 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 
 ;;;;;;;; General
 
-;; eglot for LSP. Maybe we'll try LSP mode later for sorbet if we need to LSs at the same time
-;; (use-package eglot
-;;   :config
-;;   (add-to-list 'eglot-server-programs
-;;                `((ruby-mode ruby-ts-mode) . ,(eglot-alternatives
-;;                                               '(("srb" "tc" "--lsp")
-;;                                               ("solargraph" "socket" "--port" :autoport))))))
-;;                '(ruby-base-mode .
-;;                                     '(("solargraph")
-;;                                       )))))
-
-;; it looks like LSP mode supports sorbet out of the box
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :init
@@ -1032,10 +1020,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
     ;; configure the cape-capf-buster.
     (setq-local completion-at-point-functions (list (cape-capf-buster #'lsp-completion-at-point))))
 
-  ;; (setq lsp-enabled-clients '(sorbet-ls ruby-ls graphql-lsp ts-ls eslint))
-  ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls copilot-ls))
-  ;; (setq lsp-enabled-clients '(ruby-lsp-ls graphql-lsp ts-ls eslint tfmls))
-  (setq lsp-enabled-clients '(ts-ls eslint tfmls kotlin-ls))
+  (setq lsp-enabled-clients '(ts-ls eslint tfmls ruby-lsp-ls))
   :config
   ;; these are emacs settings for lsp performance
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
@@ -1055,37 +1040,13 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :custom
   (lsp-completion-provider :none) ;; corfu
   (lsp-signature-auto-activate nil) ;; this momentarily steals focus and triggers auto-save that runs rubocop because of rubocopfmt-mode
-  ;; (lsp-sorbet-as-add-on t)
-  ;; (lsp-elixir-local-server-command "/usr/lib/elixir-ls/language_server.sh")
-  ;; (lsp-eslint-server-command '("node" "/Users/andrew.herr/.vscode/extensions/dbaeumer.vscode-eslint-3.0.16/server/out/eslintServer.js" "--stdio"))
-  ;; (lsp-copilot-enabled t)
-  ;; (lsp-copilot-version "1.357.0")
-  ;; (lsp-copilot-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server")
-  :hook (((js-base-mode typescript-ts-base-mode terraform-mode kotlin-ts-mode) . lsp-deferred)
+  :hook (((js-base-mode typescript-ts-base-mode terraform-mode ruby-base-mode) . lsp-deferred)
 	 ;; if you want which-key integration
 	 (lsp-mode . lsp-enable-which-key-integration)
 	 (lsp-completion-mode . my/lsp-mode-setup-completion)))
 
 (use-package lsp-treemacs)
 (use-package lsp-ui)
-
-;; GH CoPilot??
-;; npm install @github/copilot-cli in a convenient location and set the server-executable variable below
-;; since the local project's nodejs version might not be compatible
-;; https://github.com/copilot-emacs/copilot.el
-;; (use-package copilot
-;;   :straight (:host github :repo "copilot-emacs/copilot.el" :files ("*.el"))
-;;   :hook (prog-mode . copilot-mode)
-;;   :bind
-;;   (:map copilot-completion-map
-;;         ("TAB" . copilot-accept-completion)
-;;         ("RET" . copilot-accept-completion)
-;;         ("C-c C-c" . copilot-accept-completion)
-;;         ("C-c C-n" . copilot-next-completion)
-;;         ("C-c C-p" . copilot-previous-completion)
-;;         ("C-c C-l" . copilot-clear-overlay))
-;;   :custom
-;;   (copilot-server-executable "/Users/c-andrew.herr/src/copilot-language-server/node_modules/@github/copilot-language-server/native/darwin-arm64/copilot-language-server"))
 
 ;; Claude code IDE in emacs
 ;; https://github.com/manzaltu/claude-code-ide.el
@@ -1446,29 +1407,6 @@ See `jf/treesit-language-available-p' for usage.")
   (("\\.tsx\\'" . tsx-ts-mode)
    ("\\.jsx\\'" . tsx-ts-mode)
    ("\\.js\\'" . typescript-ts-mode)))
-
-;; I couldn't make it work, and the keybindings are in all the wrong places
-;; (use-package jest-test-mode
-;;   :commands jest-test-mode
-;;   :config
-;;   (setq jest-test-mode-map "C-c ,")
-;;   :custom
-;;   (jest-test-options '())
-;;   (jest-test-command-string "yarn %s test %s %s")
-;;   :hook (typescript-ts-base-mode))
-
-;; run jest tests with a popup (jest-popup)
-;; https://github.com/emiller88/emacs-jest
-(use-package jest
-  :custom
-  (jest-executable "npm test")
-  (jest-unsaved-buffers-behavior 'save-current)
-  :bind
-  (:map jest-minor-mode-map
-	(("C-c , v" . jest-file)
-	 ("C-c , r" . jest-repeat)
-	 ("C-c , RET" . jest-popup)))
-  :hook (typescript-ts-base-mode . jest-minor-mode))
 
 (use-package graphql-mode
   :mode
