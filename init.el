@@ -1280,6 +1280,10 @@ See `jf/treesit-language-available-p' for usage.")
    (csv-mode . csv-align-mode)
    (csv-mode . (lambda () (toggle-truncate-lines 1)))))
 
+;; nix-mode https://github.com/NixOS/nix-mode
+(use-package nix-mode
+  :mode "\\.nix\\'")
+
 ;;;;;;;;;;
 ;; Ruby ;;
 ;;;;;;;;;;
