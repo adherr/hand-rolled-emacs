@@ -73,6 +73,11 @@
                          (- (save-excursion (end-of-line) (current-column))
                             (window-width) -2))
                   (funcall orig-fn arg set-minimum))))
+  ;; dotenv/.envrc files are consumed by bash-ish tooling (dotenv loaders,
+  ;; direnv), not zsh - don't let sh-mode fall back to $SHELL's dialect
+  (defun my/sh-mode-bash ()
+    (sh-mode)
+    (sh-set-shell "bash" nil nil))
   ;; toolbar isn't on in TTY
   (tool-bar-mode -1)
   ;; Don't use messages that you don't read
@@ -297,9 +302,8 @@
   :mode
   ("\\.zsh$" . shell-script-mode)
   ("\\.zshrc$" . shell-script-mode)
-  ("\\.env$" . shell-script-mode)
-  ("^.envrc$" . shell-script-mode)
-  ("^.env*" . shell-script-mode)
+  ("\\(/\\|\\`\\)\\.envrc\\'" . my/sh-mode-bash)
+  ("\\.env\\(\\..*\\)?\\'" . my/sh-mode-bash)
   ("Procfile*" . conf-mode)
   ;; ruby mode should include rbi files
   ("\\.rbi\\'" . ruby-ts-mode)
