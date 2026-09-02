@@ -1497,13 +1497,17 @@ See `jf/treesit-language-available-p' for usage.")
 (use-package prettier
   :config
   (add-to-list 'prettier-major-mode-parsers '(typescript-ts-base-mode . (typescript babel-ts)))
-  ;; Resolve mise's node explicitly: ambient PATH can resolve to Homebrew's
-  ;; node instead, but NODE_PATH is honored regardless of which node runs.
-  (let* ((mise-node (string-trim
-                     (shell-command-to-string "mise where node 2>/dev/null")))
-         (global-modules (expand-file-name "lib/node_modules" mise-node)))
-    (when (file-directory-p global-modules)
-      (setenv "NODE_PATH" global-modules)))
+  ;; prettier.el doesn't shell out to a `prettier` binary — it runs Emacs'
+  ;; node and requires the `prettier` npm module directly, so Homebrew's
+  ;; `prettier` formula doesn't satisfy it. The module is installed via
+  ;; mise's npm backend (`prettier` in ~/.config/mise/config.toml's
+  ;; [tools], not node's own global node_modules), so resolve its
+  ;; NODE_PATH explicitly here.
+  (let* ((mise-prettier (string-trim
+                         (shell-command-to-string "mise where prettier 2>/dev/null")))
+         (prettier-modules (expand-file-name "node_modules" mise-prettier)))
+    (when (file-directory-p prettier-modules)
+      (setenv "NODE_PATH" prettier-modules)))
   (global-prettier-mode))
 
 ;;;;;;;;;;;;
