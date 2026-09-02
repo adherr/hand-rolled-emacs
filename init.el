@@ -73,6 +73,11 @@
                          (- (save-excursion (end-of-line) (current-column))
                             (window-width) -2))
                   (funcall orig-fn arg set-minimum))))
+  ;; terminal mouse support (GUI frames get this for free)
+  (unless (display-graphic-p)
+    (xterm-mouse-mode 1)
+    (setq mouse-wheel-mode t))
+
   ;; dotenv/.envrc files are consumed by bash-ish tooling (dotenv loaders,
   ;; direnv), not zsh - don't let sh-mode fall back to $SHELL's dialect
   (defun my/sh-mode-bash ()
@@ -106,6 +111,9 @@
 	'("" (:eval (if (buffer-file-name)
 			(abbreviate-file-name (buffer-file-name))
 		      "%b"))))
+  ;; propagate frame-title-format to the terminal's OSC 2 title too
+  ;; (GUI frames get this for free via the native titlebar)
+  (setq xterm-set-window-title t)
   ;; confirm exit because fat fingers
   (setq confirm-kill-emacs 'y-or-n-p)
   ;; dotfiles are a symlink farm into a git-controlled repo; always follow
