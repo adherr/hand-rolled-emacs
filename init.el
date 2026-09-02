@@ -63,6 +63,16 @@
   (global-display-line-numbers-mode 1)
   (column-number-mode 1)
   (blink-cursor-mode -1)
+  (setq mouse-wheel-tilt-scroll t) ; two-finger left/right trackpad scroll
+  (setq mouse-wheel-flip-direction t) ; direction came in backwards
+  ;; `scroll-left' has no built-in limit, so with truncate-lines on it'll
+  ;; happily scroll past the end of every visible line into blank space
+  (advice-add 'scroll-left :around
+              (lambda (orig-fn &optional arg set-minimum)
+                (when (< (window-hscroll)
+                         (- (save-excursion (end-of-line) (current-column))
+                            (window-width) -2))
+                  (funcall orig-fn arg set-minimum))))
   ;; toolbar isn't on in TTY
   (tool-bar-mode -1)
   ;; Don't use messages that you don't read
