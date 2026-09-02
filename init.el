@@ -442,6 +442,11 @@
 
 ;; https://github.com/dakra/ghostel
 (use-package ghostel
+  ;; `ghostel--define-terminal-keys' binds C-a..C-z and C-/ to the PTY but
+  ;; misses plain C-_ (Emacs's global `undo'), which ghostel buffers don't
+  ;; support anyway (buffer-disable-undo) - send it to the shell instead.
+  :bind (:map ghostel-semi-char-mode-map
+              ("C-_" . ghostel--send-event))
   :config
   ;; ghostel-mode's cursor-type is entirely terminal-driven (DECSCUSR), with
   ;; no frame-focus awareness; ghostel--buffer-focused-p is the same internal
