@@ -557,7 +557,7 @@
 			     minitest-verify
 			     minitest-verify-all
 			     minitest-verify-single
-			     projectile-find-file
+			     project-find-file
 			     rubocop-check-project
 			     rubocop-format-project
 			     rubocop-check-directory
@@ -703,7 +703,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (("C-." . embark-act)         ;; pick some comfortable binding
    ("C-;" . embark-dwim)        ;; good alternative: M-.
    ("C-h B" . embark-bindings)  ;; alternative for `describe-bindings'
-   (:map embark-become-file+buffer-map ("p" . projectile-find-file)))
+   (:map embark-become-file+buffer-map ("p" . project-find-file)))
 
 
   :init
@@ -890,19 +890,21 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (dired-mode . diff-hl-dired-mode)
   (magit-post-refresh . diff-hl-magit-post-refresh))
 
-;; Projects with projectile (although maybe we should switch to built-in project.el)
-(use-package projectile
-  :init (projectile-mode t)
-  :bind (:map projectile-mode-map
-	      ("C-c p" . projectile-command-map)
-	      :map projectile-command-map
-	      ;; consult ripgrep obeys project setting, and it's nicer than the default projectile command
-	      ("s r" . consult-ripgrep)
-	      ("w f" . +kill-project-file-path)
-	      ("w l" . +kill-project-file-line-path))
+;; Projects with built-in project.el
+(use-package project
+  :straight nil
+  ;; project-prefix-map is a keymap variable, not a command, so it needs
+  ;; :bind-keymap (plain :bind signals "Wrong type argument: commandp")
+  :bind-keymap ("C-c p" . project-prefix-map)
+  :bind (:map project-prefix-map
+	 ("p" . +project-switch-project)
+	 ;; consult ripgrep obeys project setting, and it's nicer than the default project-find-regexp
+	 ("g" . consult-ripgrep)
+	 ("w f" . +kill-project-file-path)
+	 ("w l" . +kill-project-file-line-path))
   :config
   (defun +project-file-path ()
-    (file-relative-name buffer-file-name (projectile-project-root)))
+    (file-relative-name buffer-file-name (project-root (project-current t))))
 
   (defun +kill-project-file-path ()
     (interactive)
@@ -917,8 +919,22 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 			     (line-number-at-pos))))
       (kill-new path-line)
       (message path-line)))
+
+  ;; `project-switch-commands' only rebinds `project-current-directory-override',
+  ;; which most commands (including `magit-status') don't consult - they read
+  ;; `default-directory'. Rebind that directly instead, same as
+  ;; `projectile-switch-project-action' used to.
   ;; TODO: make sure this is a git repo before running magit-status and default to something else otherwise
-  :custom (projectile-switch-project-action 'magit-status))
+  (defun +project-switch-project (dir)
+    "Switch to another project by opening `magit-status' there."
+    (interactive (list (funcall project-prompter)))
+    (project-remember-project (project-current t dir))
+    (let ((default-directory dir))
+      (magit-status dir)))
+
+  ;; treat submodules (e.g. this config, a submodule of ~/dotfiles) as their
+  ;; own project instead of folding them into the parent repo
+  :custom (project-vc-merge-submodules nil))
 
 ;; Switch env vars when you navigate to a .envrc project
 (use-package direnv
@@ -1450,13 +1466,6 @@ See `jf/treesit-language-available-p' for usage.")
 (use-package bundler
   :defer t
   :commands bundle-install)
-
-;; projectile-rails so I theoretically never need to use the terminal
-;; https://github.com/asok/projectile-rails
-(use-package projectile-rails
-  :config
-  (projectile-rails-global-mode)
-  :bind (:map projectile-rails-mode-map ("C-c e" . projectile-rails-command-map)))
 
 ;; I'd like to run rubocop manually until I can figure out how to get the lsp to do it
 ;; (figured it out, but it requires the lsp to be in the bundle, which will be hard to manage. lsp-format-buffer)
