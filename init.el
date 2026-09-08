@@ -1149,6 +1149,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :config
   (claude-code-ide-emacs-tools-setup)
   (setq claude-code-ide-terminal-backend 'ghostel)
+  (setq claude-code-ide-use-side-window nil)
   (setq claude-code-ide-mcp-server-tools
         (seq-filter (lambda (tool)
                       (member (plist-get tool :name)
