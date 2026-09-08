@@ -53,12 +53,21 @@
     (add-to-list 'exec-path-from-shell-variables var)))
 
 (defvar line-length 120)
-;; redirect custom to its own file so it doesn't pollute init.el
+;; redirect custom to its own file so it doesn't pollute init.el. The old
+;; custom.el predated Emacs auto-inserting a lexical-binding cookie on save
+;; (cus-edit.el only adds it when the buffer is empty), so it kept loading
+;; without one and warning. Deleted it so the next customize-save starts
+;; fresh and picks up the cookie.
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (load custom-file 'noerror)
 
 ;; base Emacs config
 (use-package emacs
+  :custom
+  (custom-safe-themes
+   '("f87c86fa3d38be32dc557ba3d4cedaaea7bc3d97ce816c0e518dfe9633250e34" default))
+  (safe-local-variable-values
+   '((git-link-default-branch . "master") (encoding . utf-8)))
   :config
   (global-display-line-numbers-mode 1)
   (column-number-mode 1)
@@ -1281,15 +1290,20 @@ See `jf/treesit-language-available-p' for usage.")
 
 ;;;;;;;;; Languages
 
+(use-package org
+  :straight nil
+  :custom
+  (org-agenda-files '("~/src/focused/drafthouse/notes/scott.org"
+		       "/Users/andrewherr/src/focused/drafthouse/notes/inbox.org")))
+
 ;; markdown mode
 (use-package markdown-mode
   ;; :ensure-system-package pandoc
   :commands gfm-mode
   :mode (("\\.md\\'" . gfm-mode))
+  :custom-face
+  (markdown-pre-face ((t nil)))
   :config
-  (custom-set-faces
-   '(markdown-pre-face ((t nil))))
-
   (setq markdown-command "pandoc --standalone --mathjax --from=gfm"
 	markdown-disable-tooltip-prompt t
 	markdown-fontify-code-blocks-natively t))
