@@ -27,6 +27,11 @@
 (use-package exec-path-from-shell
   :config
   (exec-path-from-shell-initialize)
+  ;; mise activate resolves versions per-shell-cd, which exec-path-from-shell
+  ;; can't replicate (it captures PATH once at startup); mise's shims dir
+  ;; re-resolves the right version per invocation, so prioritize it here.
+  (add-to-list 'exec-path (expand-file-name "~/.local/share/mise/shims"))
+  (setenv "PATH" (concat (expand-file-name "~/.local/share/mise/shims") ":" (getenv "PATH")))
   ;; native comp stolen from https://github.com/xenodium/dotsies/blob/main/emacs/features/fe-package-extensions.el#L19
   (if (and (fboundp 'native-comp-available-p)
 	   (native-comp-available-p))
