@@ -82,10 +82,13 @@
                          (- (save-excursion (end-of-line) (current-column))
                             (window-width) -2))
                   (funcall orig-fn arg set-minimum))))
-  ;; terminal mouse support (GUI frames get this for free)
-  (unless (display-graphic-p)
-    (xterm-mouse-mode 1)
-    (setq mouse-wheel-mode t))
+  ;; tmux's TERM ("tmux-256color") isn't a recognized xterm variant, so
+  ;; terminal-init-xterm wouldn't otherwise run for tmux ttys
+  (add-to-list 'term-file-aliases '("tmux-256color" . "xterm-256color"))
+  ;; not gated on (display-graphic-p): that's only true for the frame
+  ;; that exists when init.el loads, not later emacsclient tty frames
+  (xterm-mouse-mode 1)
+  (setq mouse-wheel-mode t)
 
   ;; dotenv/.envrc files are consumed by bash-ish tooling (dotenv loaders,
   ;; direnv), not zsh - don't let sh-mode fall back to $SHELL's dialect
@@ -1149,6 +1152,11 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 
 (use-package lsp-treemacs)
 (use-package lsp-ui)
+
+;; lsp-mode's headerline breadcrumb icons are hardwired to all-the-icons
+;; (lsp-icons.el), not nerd-icons -- without this it silently falls back
+;; to plain text breadcrumbs.
+(use-package all-the-icons)
 
 ;; Claude code IDE in emacs
 ;; https://github.com/manzaltu/claude-code-ide.el
