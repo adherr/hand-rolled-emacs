@@ -2,17 +2,7 @@
 !/straight/versions
 /straight/versions/*
 !/straight/versions/default.el
-/transient/
-/savefile/
-/auto-save-list/
 /tree-sitter/
 /.cache/
-/.lsp-session-v1
 /elpa/
 /eln-cache/
-/projects.eld
-/projectile-bookmarks.eld
-/projects
-/tramp
-/.dap-breakpoints
-/projectile-frecency.eld

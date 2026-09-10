@@ -22,6 +22,27 @@
   (straight-use-package-by-default t)
   (straight-host-usernames `((github . "adherr"))))
 
+;; Redirect packages' state files (desktop, recentf, savehist, save-place,
+;; tramp, etc.) out of this git-tracked directory into XDG_STATE_HOME,
+;; instead of scattering them here or requiring a .gitignore entry per
+;; package. Must load before anything else touches path variables, so it
+;; comes right after straight/use-package setup.
+(use-package no-littering
+  :demand t
+  :init
+  (setq no-littering-var-directory
+	(expand-file-name "emacs/"
+			   (or (getenv "XDG_STATE_HOME")
+			       (expand-file-name ".local/state" (getenv "HOME")))))
+  :config
+  ;; no-littering nests url-cache-directory under var/ (state) alongside
+  ;; url-cookie-file/url-history-file, but it's regenerable HTTP cache, not
+  ;; state worth keeping around — point it at XDG_CACHE_HOME instead.
+  (setq url-cache-directory
+	(expand-file-name "emacs/url/"
+			   (or (getenv "XDG_CACHE_HOME")
+			       (expand-file-name ".cache" (getenv "HOME"))))))
+
 ;; load my path
 ;; https://github.com/purcell/exec-path-from-shell
 (use-package exec-path-from-shell
@@ -143,14 +164,9 @@
   (setq vc-follow-symlinks t)
   ;; I don't think I've ever successfully transposed words, but it's a mess when I open tabs in emacs
   (unbind-key "M-t" global-map)
-  ;; desktop saving
-  (defvar savefile-dir (expand-file-name "savefile" user-emacs-directory) "Where we save emacs's state containing files")
-  (unless (file-exists-p savefile-dir)
-    (make-directory savefile-dir t))
+  ;; desktop saving (desktop-dirname/desktop-path themed by no-littering)
   (setq desktop-base-file-name "desktop")
   (setq desktop-base-lock-name "desktop.lock")
-  (setq desktop-path (list savefile-dir))
-  (setq desktop-dirname savefile-dir)
   (setq desktop-restore-eager 6)
   (desktop-save-mode 1)
   ;; store all backup and autosave files in the tmp dir
@@ -158,9 +174,8 @@
 	`((".*" . ,temporary-file-directory)))
   (setq auto-save-file-name-transforms
 	`((".*" ,temporary-file-directory t)))
-  ;; setup recenf mode because sometimes it's helpful
-  (setq recentf-save-file (expand-file-name "recentf" savefile-dir)
-	recentf-max-saved-items 500
+  ;; setup recenf mode because sometimes it's helpful (path themed by no-littering)
+  (setq recentf-max-saved-items 500
 	recentf-max-menu-items 15
 	;; disable recentf-cleanup on Emacs start, because it can cause
 	;; problems with remote files
@@ -173,17 +188,14 @@
   (setq uniquify-separator "/")
   (setq uniquify-after-kill-buffer-p t)    ; rename after killing uniquified
   (setq uniquify-ignore-buffers-re "^\\*") ; don't muck with special buffers
-  ;; saveplace remembers your location in a file when saving files
-  (setq save-place-file (expand-file-name "saveplace" savefile-dir))
+  ;; saveplace remembers your location in a file when saving files (path themed by no-littering)
   (save-place-mode 1)
-  ;; savehist keeps track of some history
+  ;; savehist keeps track of some history (path themed by no-littering)
   (setq savehist-additional-variables
 	;; search entries
 	'(search-ring regexp-search-ring vertico-repeat-history)
 	;; save every minute
-	savehist-autosave-interval 60
-	;; keep the home clean
-	savehist-file (expand-file-name "savehist" savefile-dir))
+	savehist-autosave-interval 60)
   (savehist-mode +1)
   ;; move between visible windows with Shift + arrows
   (windmove-default-keybindings)
