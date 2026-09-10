@@ -87,9 +87,14 @@
                          (- (save-excursion (end-of-line) (current-column))
                             (window-width) -2))
                   (funcall orig-fn arg set-minimum))))
-  ;; tmux's TERM ("tmux-256color") isn't a recognized xterm variant, so
-  ;; terminal-init-xterm wouldn't otherwise run for tmux ttys
-  (add-to-list 'term-file-aliases '("tmux-256color" . "xterm-256color"))
+  ;; tmux's real terminal version reply is too old for Emacs's normal
+  ;; xterm-extra-capabilities auto-detection (needs >=216, tmux reports 0),
+  ;; so modifyOtherKeys (needed to tell C-' apart from bare ') never gets
+  ;; requested via the xterm-256color path -- term/screen.el exists
+  ;; specifically for screen/tmux and forces modifyOtherKeys on instead
+  (add-to-list 'term-file-aliases '("tmux-256color" . "screen"))
+  ;; Ghostty's TERM isn't a recognized xterm variant either
+  (add-to-list 'term-file-aliases '("xterm-ghostty" . "xterm-256color"))
   ;; not gated on (display-graphic-p): that's only true for the frame
   ;; that exists when init.el loads, not later emacsclient tty frames
   (xterm-mouse-mode 1)
@@ -1249,11 +1254,36 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;; to plain text breadcrumbs.
 (use-package all-the-icons)
 
+;; Renders images (eww, org, dired, doc-view, ...) in terminal frames via
+;; the Kitty graphics protocol or Sixel, tmux included.
+;; https://github.com/cashmeredev/kitty-graphics.el
+(use-package kitty-graphics
+  :straight (:host github :repo "cashmeredev/kitty-graphics.el")
+  :config
+  (kitty-graphics-setup))
+
+;; xterm-function-map (which modifyOtherKeys sequences decode through) has
+;; entries for S-tab/S-return but not S-space, so a lingering Shift when
+;; hitting space (e.g. after a capitalized word) leaks the raw escape tail
+;; ("2~") into the buffer instead of just inserting a space
+(with-eval-after-load 'xterm
+  (define-key xterm-function-map "\e[27;2;32~" [?\s])
+  (define-key xterm-function-map "\e[2;32u" [?\s]))
+
+;; Kitty keyboard protocol, so TTY frames can tell C-' apart from bare '
+(use-package kkp
+  :config
+  (global-kkp-mode +1))
+
 ;; Claude code IDE in emacs
 ;; https://github.com/manzaltu/claude-code-ide.el
 (use-package claude-code-ide
   :straight (:type git :host github :repo "manzaltu/claude-code-ide.el")
-  :bind ("C-c C-'" . claude-code-ide-menu)
+  ;; C-c m duplicates C-c C-' for terminal frames: tmux has no legacy
+  ;; encoding for Ctrl+' and doesn't forward Kitty-protocol key reports,
+  ;; so the chord only reaches Emacs correctly in GUI frames
+  :bind (("C-c C-'" . claude-code-ide-menu)
+         ("C-c m" . claude-code-ide-menu))
   :config
   (claude-code-ide-emacs-tools-setup)
   (setq claude-code-ide-terminal-backend 'ghostel)
