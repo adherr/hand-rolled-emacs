@@ -1268,6 +1268,10 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ;; lsp-ruff.el's default [] for lint-select serializes as JSON [] (select zero rules),
   ;; not "no override" — ruff then ignores pyproject.toml and reports nothing. nil -> JSON null fixes it.
   (lsp-ruff-lint-select nil)
+  ;; ts-ls otherwise uses lsp-mode's own private `typescript` npm install, which
+  ;; now resolves to typescript@7.x — that package dropped the `tsserver` binary
+  ;; entirely, so ts-ls can never start. Use each project's own node_modules/typescript instead.
+  (lsp-clients-typescript-prefer-use-project-ts-server t)
   :hook (((js-base-mode typescript-ts-base-mode terraform-mode ruby-base-mode python-base-mode) . lsp-deferred)
 	 ;; if you want which-key integration
 	 (lsp-mode . lsp-enable-which-key-integration)
