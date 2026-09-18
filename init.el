@@ -1462,7 +1462,24 @@ See `jf/treesit-language-available-p' for usage.")
   :config
   (setq markdown-command "pandoc --standalone --mathjax --from=gfm"
 	markdown-disable-tooltip-prompt t
-	markdown-fontify-code-blocks-natively t))
+	markdown-fontify-code-blocks-natively t)
+  ;; live-preview normally exports HTML next to the source file, cluttering
+  ;; project git status; redirect it into no-littering's var directory instead
+  (defun +markdown-live-preview-get-filename ()
+    (when (buffer-file-name)
+      (let ((dir (no-littering-expand-var-file-name "markdown-live-preview/")))
+	(make-directory dir t)
+	(expand-file-name (concat (secure-hash 'sha1 (expand-file-name (buffer-file-name))) ".html")
+			   dir))))
+  (advice-add 'markdown-live-preview-get-filename :override #'+markdown-live-preview-get-filename)
+  ;; live-preview only re-exports on `after-save-hook', so out-of-buffer edits
+  ;; (e.g. from Claude) don't refresh EWW even though auto-revert reloads the
+  ;; buffer. Re-export on revert too.
+  (add-hook 'markdown-live-preview-mode-hook
+	    (lambda ()
+	      (if markdown-live-preview-mode
+		  (add-hook 'after-revert-hook #'markdown-live-preview-if-markdown nil t)
+		(remove-hook 'after-revert-hook #'markdown-live-preview-if-markdown t)))))
 
 ;; switch to yaml-mode package, because built-in yaml-ts-mode sucks
 ;; why doesn't this work :'(
