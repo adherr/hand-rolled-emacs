@@ -300,8 +300,6 @@
 	ispell-extra-args '("--sug-mode=ultra"))
   (setq text-mode-ispell-word-completion nil)
   (add-hook 'text-mode-hook 'flyspell-mode)
-  ;; highlight the current line
-  (global-hl-line-mode +1)
   ;; show whitespace
   (setq whitespace-line-column line-length) ;; limit line length
   (setq whitespace-style '(face tabs empty trailing)) ;; add lines-tail to highlight the end of long lines when required
@@ -455,7 +453,7 @@
   ;; the real hex values there too instead of base16's generic ANSI-name mapping.
   (setq base16-theme-256-color-source 'colors)
   (setq base16-highlight-mode-line 'contrast)
-  (global-hl-line-mode -1) ;; line highlight doesn't play nice with text colors
+  (global-hl-line-mode -1) ;; line highlight doesn't play nice with text colors: hl-line-overlay-priority is -50, so font-lock foreground always wins and no background can contrast with every syntax color
   (load-theme 'base16-tomorrow t)
   ;; base16-theme.el (as of the current build) doesn't theme these packages, or
   ;; the Emacs 29+ font-lock-* faces tree-sitter modes use. Patched in using the
@@ -463,7 +461,12 @@
   ;; so it stays in sync if the palette changes and works for any base16 variant.
   (base16-theme-set-faces
    'base16-tomorrow base16-tomorrow-theme-colors
-   '((vertico-current                        :inherit highlight)
+   ;; pale blue current-line tint (90% base00 / 10% base0D) -- lighter than
+   ;; base01 so it still contrasts against pale syntax colors (base0A yellow
+   ;; is the worst case: base01 background drops contrast below even the
+   ;; unhighlighted base00 baseline, this stays close to that baseline)
+   '((lin-blue                                :foreground unspecified :underline nil :extend t :background "#ecf1f7")
+     (vertico-current                        :inherit highlight)
      (vertico-group-title                    :foreground base03 :weight bold)
      (vertico-group-separator                :foreground base03 :strike-through t)
      (vertico-multiline                      :foreground base04)
@@ -1108,6 +1111,18 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;; editing lisp sorta sucks without this
 (use-package rainbow-delimiters
   :hook ((prog-mode org-mode) . rainbow-delimiters-mode))
+
+;; current-line indicator, background only so font-lock fontification of the
+;; line stays intact. lin-blue's stock background is tuned for a mid-gray
+;; theme; patched lighter (closer to base00 white) below so it still
+;; contrasts against pale syntax colors (e.g. base0A yellow) without
+;; overriding the underlying text's foreground.
+(use-package lin
+  :config
+  (dolist (hook '(prog-mode-hook conf-mode-hook text-mode-hook))
+    (add-to-list 'lin-mode-hooks hook))
+  (setq lin-face 'lin-blue)
+  (lin-global-mode 1))
 
 ;; full angry-fruit-salad mode. Maybe I should try prism again, as I'm not sure this is valuable enough to add this much chaos
 ;; (use-package rainbow-identifiers
