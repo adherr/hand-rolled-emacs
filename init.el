@@ -563,28 +563,37 @@
   :config
   (which-key-mode))
 
-;; https://github.com/akermu/emacs-libvterm
-(use-package vterm
-  :custom
-  (vterm-kill-buffer-on-exit t)
-  (vterm-shell (or (executable-find "zsh") shell-file-name)))
-
-;; a better terminal emulator for emacs?
-;; https://codeberg.org/akib/emacs-eat
-(use-package eat
- :straight (:type git
-       :host codeberg
-       :repo "akib/emacs-eat"
-       :files ("*.el" ("term" "term/*.el") "*.texi"
-	       "*.ti" ("terminfo/e" "terminfo/e/*")
-	       ("terminfo/65" "terminfo/65/*")
-	       ("integration" "integration/*")
-	       (:exclude ".dir-locals.el" "*-tests.el"))))
-
-
 
 ;; https://github.com/dakra/ghostel
 (use-package ghostel
+  ;; `ghostel-module-directory' defaults to nil, which keeps the compiled
+  ;; native module inside straight's build/ dir for the `ghostel' package.
+  ;; Any straight rebuild of that package (e.g. triggered by an unrelated
+  ;; init.el edit invalidating its build cache) wipes and recreates the
+  ;; build dir from the git checkout, deleting the module since it isn't
+  ;; part of the source repo - hence recurring "module not found" errors.
+  ;; Pin it outside straight's tree so rebuilds can't touch it. It's a
+  ;; downloaded/compiled binary, regenerable like url-cache-directory
+  ;; above, so XDG_CACHE_HOME rather than user-emacs-directory.
+  :init
+  (setq ghostel-module-directory
+        (expand-file-name "emacs/ghostel/"
+                           (or (getenv "XDG_CACHE_HOME")
+                               (expand-file-name ".cache" (getenv "HOME")))))
+  ;; Prefer building locally via zig (no trust in a downloaded blob, no
+  ;; dependency on GitHub release infra) with -Dcpu=native for real codegen
+  ;; for this machine's CPU (vs. upstream's -Dcpu=baseline default, chosen
+  ;; there for portability across the download's target arch) - safe since
+  ;; the binary lives in a per-machine cache dir, never shared or committed.
+  ;; PARKED as of 2026-09-16: Homebrew's zig 0.16.0 fails to build ghostel's
+  ;; vendored stb_image.c against the current Xcode SDK
+  ;; (-Wnullability-completeness treated as an error), independent of the
+  ;; -Dcpu flag - confirmed both baseline and native fail identically. Back
+  ;; to 'download until brew ships a zig with this fixed, then flip
+  ;; ghostel-module-auto-install to 'compile.
+  (setq ghostel-module-auto-install 'download)
+  (setq ghostel-module-compile-command
+        "zig build --prefix %s -Doptimize=ReleaseFast -Dcpu=native")
   ;; `ghostel--define-terminal-keys' binds C-a..C-z and C-/ to the PTY but
   ;; misses plain C-_ (Emacs's global `undo'), which ghostel buffers don't
   ;; support anyway (buffer-disable-undo) - send it to the shell instead.
