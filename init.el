@@ -392,6 +392,26 @@
   (global-set-key [kp-delete] 'delete-char) ;; sets fn-delete to be right-delete
   (setq auth-sources '(macos-keychain-internet)) ; lets things like forge get credz from keychain
 
+  ;; tty frames (Ghostty/tmux) have no clipboard backend registered at
+  ;; all, so kill/yank silently stop at the kill-ring instead of reaching
+  ;; the system clipboard the way GUI frames do automatically. Since
+  ;; display-graphic-p is evaluated per-call against the selected frame,
+  ;; these stay correct across a daemon's mixed GUI/tty frames.
+  (defun my/interprogram-cut-function (text)
+    (if (display-graphic-p)
+        (gui-select-text text)
+      (let ((process-connection-type nil))
+        (with-temp-buffer
+          (insert text)
+          (call-process-region (point-min) (point-max) "pbcopy")))))
+  (defun my/interprogram-paste-function ()
+    (if (display-graphic-p)
+        (gui-selection-value)
+      (let ((s (shell-command-to-string "pbpaste")))
+        (unless (string= s "") (substring-no-properties s)))))
+  (setq interprogram-cut-function #'my/interprogram-cut-function)
+  (setq interprogram-paste-function #'my/interprogram-paste-function)
+
   ;; fire up the server, since we don't have systemd
   (use-package server
     :config (unless (server-running-p) (server-start)))
