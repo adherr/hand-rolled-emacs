@@ -78,6 +78,12 @@
   (dolist (var '("LANG" "LC_CTYPE" "LIBRARY_PATH" "LSP_USE_PLISTS" "SSH_AUTH_SOCK"))
     (add-to-list 'exec-path-from-shell-variables var)))
 
+;; Per-buffer env vars from mise's [env] tables (e.g. CLAUDE_CONFIG_DIR),
+;; on top of the shims dir above which only handles tool version switching.
+;; https://github.com/eki3z/mise.el
+(use-package mise
+  :hook (after-init . global-mise-mode))
+
 (defvar line-length 120)
 ;; redirect custom to its own file so it doesn't pollute init.el. The old
 ;; custom.el predated Emacs auto-inserting a lexical-binding cookie on save
@@ -1045,12 +1051,8 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;; Projects with built-in project.el
 (use-package project
   :straight nil
-  ;; project-prefix-map is a keymap variable, not a command, so it needs
-  ;; :bind-keymap (plain :bind signals "Wrong type argument: commandp")
-  :bind-keymap ("C-c p" . project-prefix-map)
   :bind (:map project-prefix-map
 	 ("p" . +project-switch-project)
-	 ;; consult ripgrep obeys project setting, and it's nicer than the default project-find-regexp
 	 ("g" . consult-ripgrep)
 	 ("w f" . +kill-project-file-path)
 	 ("w l" . +kill-project-file-line-path))
@@ -1345,6 +1347,23 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :bind (("C-c C-'" . claude-code-ide-menu)
          ("C-c m" . claude-code-ide-menu))
   :config
+  ;; The package execs the `claude` binary with the env captured once at
+  ;; Emacs startup (see exec-path-from-shell above), so mise's per-directory
+  ;; vars (e.g. CLAUDE_CONFIG_DIR set by a project's .mise.toml) never reach
+  ;; the process. Merge mise's directory-scoped env in before spawning.
+  (defun my/mise-env-for-directory (dir)
+    (condition-case nil
+        (let* ((json (shell-command-to-string
+                       (format "mise env -C %s --json 2>/dev/null"
+                               (shell-quote-argument (expand-file-name dir)))))
+               (alist (json-parse-string json :object-type 'alist)))
+          (mapcar (lambda (kv) (format "%s=%s" (car kv) (cdr kv))) alist))
+      (error nil)))
+  (defun my/claude-code-ide--mise-env-advice (orig-fn buffer-name working-dir &rest rest)
+    (let ((process-environment
+           (append (my/mise-env-for-directory working-dir) process-environment)))
+      (apply orig-fn buffer-name working-dir rest)))
+  (advice-add 'claude-code-ide--create-terminal-session :around #'my/claude-code-ide--mise-env-advice)
   (claude-code-ide-emacs-tools-setup)
   (setq claude-code-ide-terminal-backend 'ghostel)
   (setq claude-code-ide-use-side-window nil)
