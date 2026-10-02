@@ -174,6 +174,8 @@
   (setq desktop-base-file-name "desktop")
   (setq desktop-base-lock-name "desktop.lock")
   (setq desktop-restore-eager 6)
+  ;; special *buffers* with desktop handlers (eww) restore broken (nil history-position)
+  (setq desktop-buffers-not-to-save "\\`[ *]")
   (desktop-save-mode 1)
   ;; store all backup and autosave files in the tmp dir
   (setq backup-directory-alist
@@ -395,7 +397,10 @@
   (setq mac-command-modifier 'meta) ; swap M and s on mac keyboards
   (setq mac-option-modifier 'super)
   (setq ns-function-modifier 'hyper)  ; make Fn key do Hyper
-  (global-set-key [kp-delete] 'delete-char) ;; sets fn-delete to be right-delete
+  ;; Keeb sends kp-delete for forward-delete; translate it to the standard
+  ;; deletechar event so every mode (incl. ghostel's PTY forwarding) sees
+  ;; a normal Delete keypress instead of only the global delete-char binding.
+  (define-key key-translation-map [kp-delete] [deletechar])
   (setq auth-sources '(macos-keychain-internet)) ; lets things like forge get credz from keychain
 
   ;; tty frames (Ghostty/tmux) have no clipboard backend registered at
