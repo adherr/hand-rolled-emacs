@@ -47,6 +47,8 @@
 ;; https://github.com/purcell/exec-path-from-shell
 (use-package exec-path-from-shell
   :config
+  (dolist (var '("LANG" "LC_CTYPE" "LIBRARY_PATH" "LSP_USE_PLISTS" "SSH_AUTH_SOCK" "CLAUDE_CODE_TMPDIR"))
+    (add-to-list 'exec-path-from-shell-variables var))
   (exec-path-from-shell-initialize)
   ;; mise activate resolves versions per-shell-cd, which exec-path-from-shell
   ;; can't replicate (it captures PATH once at startup); mise's shims dir
@@ -74,9 +76,7 @@
 	;; Only set after LIBRARY_PATH can find gcc libraries.
 	(setq comp-deferred-compilation t)
 	(setq comp-speed 3))
-    (message "Native comp is *not* available"))
-  (dolist (var '("LANG" "LC_CTYPE" "LIBRARY_PATH" "LSP_USE_PLISTS" "SSH_AUTH_SOCK"))
-    (add-to-list 'exec-path-from-shell-variables var)))
+    (message "Native comp is *not* available")))
 
 ;; Per-buffer env vars from mise's [env] tables (e.g. CLAUDE_CONFIG_DIR),
 ;; on top of the shims dir above which only handles tool version switching.
