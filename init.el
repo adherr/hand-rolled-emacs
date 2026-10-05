@@ -1504,10 +1504,7 @@ See `jf/treesit-language-available-p' for usage.")
 ;;;;;;;;; Languages
 
 (use-package org
-  :straight nil
-  :custom
-  (org-agenda-files '("~/src/focused/drafthouse/notes/scott.org"
-		       "/Users/andrewherr/src/focused/drafthouse/notes/inbox.org")))
+  :straight nil)
 
 ;; markdown mode
 (use-package markdown-mode
