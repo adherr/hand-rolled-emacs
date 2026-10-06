@@ -648,6 +648,15 @@
              :files (:defaults "etc" "src" "vendor" "build.zig" "build.zig.zon" "symbols.map"))
   :hook (after-init . ghostel-comint-global-mode))
 
+;; consult pickers (with preview) for ghostel terminals
+(use-package consult-ghostel
+  :hook (after-init . consult-ghostel-mode)
+  :bind (("C-x m" . consult-ghostel)
+         :map project-prefix-map
+         ("m" . consult-ghostel-project)
+         :map ghostel-semi-char-mode-map
+         ("C-c h" . consult-ghostel-history)))
+
 ;;; EDITORish things vvv
 
 ;; undo-tree
