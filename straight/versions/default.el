@@ -14,6 +14,7 @@
  ("csv-mode" . "b7eca7304ef7757700be5c2bc23ef6204c60eb75")
  ("dash.el" . "d746dd9edcb67a108818beb0cdc78dc1cb466832")
  ("diff-hl" . "6f1df2b83d1140a2938409b35de7f4c9c7b1defd")
+ ("dimmer.el" . "bbab62f01d45086b9098f6a0ab765282d9c7bc45")
  ("easy-kill" . "98cbae5d8c378ad14d612d7c88a78484c49a80b8")
  ("editorconfig-emacs" . "b18fcf7fdea1ce84b7fdc60360ad8016b5c00d79")
  ("el-get" . "447b7efc9fca29a087f4ec29c5d8ccb580cd1c78")

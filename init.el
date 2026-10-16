@@ -1169,6 +1169,15 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (setq lin-face 'lin-blue)
   (lin-global-mode 1))
 
+(use-package dimmer
+  :custom (dimmer-fraction 0.45)
+  :config
+  (dimmer-configure-which-key)
+  (dimmer-configure-magit)
+  (dimmer-configure-org)
+  (add-to-list 'dimmer-buffer-exclusion-regexps "^ \\*Embark Actions\\*$")
+  (dimmer-mode 1))
+
 ;; full angry-fruit-salad mode. Maybe I should try prism again, as I'm not sure this is valuable enough to add this much chaos
 ;; (use-package rainbow-identifiers
 ;;   :hook (prog-mode . rainbow-identifiers-mode))
