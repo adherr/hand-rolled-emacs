@@ -868,6 +868,15 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   :bind (:map minibuffer-local-map
 	      ("M-A" . marginalia-cycle)))
 
+;; Consult users will also want the embark-consult package.
+;; Keep before embark: embark requires it on load once consult is loaded.
+(use-package embark-consult
+  :after (embark consult)
+  ;; if you want to have consult previews as you move around an
+  ;; auto-updating embark collect buffer
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+
 ;; do stuff from where we are. Config lifted straight from
 ;; https://github.com/oantolin/embark
 (use-package embark
@@ -888,14 +897,6 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 	       '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
 		 nil
 		 (window-parameters (mode-line-format . none)))))
-
-;; Consult users will also want the embark-consult package.
-(use-package embark-consult
-  :after (embark consult)
-  ;; if you want to have consult previews as you move around an
-  ;; auto-updating embark collect buffer
-  :hook
-  (embark-collect-mode . consult-preview-at-point-mode))
 
 ;; various searching commands
 (use-package consult
