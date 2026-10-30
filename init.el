@@ -101,7 +101,7 @@
   (safe-local-variable-values
    '((git-link-default-branch . "master") (encoding . utf-8)))
   :config
-  (global-display-line-numbers-mode 1)
+  (add-hook 'prog-mode-hook #'display-line-numbers-mode)
   (column-number-mode 1)
   (blink-cursor-mode -1)
   (setq mouse-wheel-tilt-scroll t) ; two-finger left/right trackpad scroll
@@ -615,15 +615,14 @@
   ;; no frame-focus awareness; ghostel--buffer-focused-p is the same internal
   ;; predicate ghostel itself uses for terminal focus escapes (ghostel--).
   (defun my/ghostel-refresh-cursor-focus (&rest _)
-    (dolist (buf (buffer-list))
-      (when (buffer-live-p buf)
-        (with-current-buffer buf
-          (when (derived-mode-p 'ghostel-mode)
-            (ghostel--apply-cursor-style))))))
-  (advice-add 'ghostel--apply-cursor-style :after
-              (lambda ()
-                (unless (ghostel--buffer-focused-p (current-buffer))
-                  (setq cursor-type 'hollow))))
+    (dolist (buf (ghostel-buffer-list))
+      (with-current-buffer buf
+        (ghostel--apply-cursor-style))))
+  (defun my/ghostel-hollow-when-unfocused ()
+    (when (and (ghostel--terminal-input-mode-p)
+               (not (ghostel--buffer-focused-p (current-buffer))))
+      (setq cursor-type 'hollow)))
+  (advice-add 'ghostel--apply-cursor-style :after #'my/ghostel-hollow-when-unfocused)
   ;; Same hooks ghostel--focus-change itself uses, so window selection
   ;; changes within a frame (not just frame focus) refresh the cursor too.
   (add-function :after after-focus-change-function #'my/ghostel-refresh-cursor-focus)
