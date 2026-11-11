@@ -485,6 +485,29 @@
               (unless no-enable
                 (mapc #'disable-theme custom-enabled-themes))))
 
+(defvar my/theme-patches nil
+  "Alist of theme -> function adding faces to it, rerun on every enable (load-theme wipes them).")
+
+(add-hook 'enable-theme-functions
+          (lambda (theme)
+            (when-let* ((patch (alist-get theme my/theme-patches)))
+              (funcall patch)))
+          -90)
+
+(setf (alist-get 'zenburn my/theme-patches)
+      (lambda ()
+        ;; zenburn skips the bright ANSI faces (pure blue1 links in ghostel); Ghostty Zenburn palette 8-15
+        (custom-theme-set-faces
+         'zenburn
+         '(ansi-color-bright-black   ((t :foreground "#709080" :background "#709080")))
+         '(ansi-color-bright-red     ((t :foreground "#dca3a3" :background "#dca3a3")))
+         '(ansi-color-bright-green   ((t :foreground "#c3bf9f" :background "#c3bf9f")))
+         '(ansi-color-bright-yellow  ((t :foreground "#e0cf9f" :background "#e0cf9f")))
+         '(ansi-color-bright-blue    ((t :foreground "#94bff3" :background "#94bff3")))
+         '(ansi-color-bright-magenta ((t :foreground "#ec93d3" :background "#ec93d3")))
+         '(ansi-color-bright-cyan    ((t :foreground "#93e0e3" :background "#93e0e3")))
+         '(ansi-color-bright-white   ((t :foreground "#ffffff" :background "#ffffff"))))))
+
 (defun my/theme-saved ()
   (when (file-readable-p my/theme-ghostty-file)
     (with-temp-buffer
@@ -523,90 +546,90 @@
   (setq base16-theme-256-color-source 'colors)
   (setq base16-highlight-mode-line 'contrast)
   (global-hl-line-mode -1) ;; line highlight doesn't play nice with text colors: hl-line-overlay-priority is -50, so font-lock foreground always wins and no background can contrast with every syntax color
-  ;; load without enabling so the patch below can attach; my/theme-saved picks what's enabled
-  (load-theme 'base16-tomorrow t t)
   ;; base16-theme.el (as of the current build) doesn't theme these packages, or
   ;; the Emacs 29+ font-lock-* faces tree-sitter modes use. Patched in using the
   ;; theme's own base16-theme-set-faces helper + base16-tomorrow-theme-colors,
   ;; so it stays in sync if the palette changes and works for any base16 variant.
-  (base16-theme-set-faces
-   'base16-tomorrow base16-tomorrow-theme-colors
-   ;; pale blue current-line tint (90% base00 / 10% base0D) -- lighter than
-   ;; base01 so it still contrasts against pale syntax colors (base0A yellow
-   ;; is the worst case: base01 background drops contrast below even the
-   ;; unhighlighted base00 baseline, this stays close to that baseline)
-   '((lin-blue                                :foreground unspecified :underline nil :extend t :background "#ecf1f7")
-     (vertico-current                        :inherit highlight)
-     (vertico-group-title                    :foreground base03 :weight bold)
-     (vertico-group-separator                :foreground base03 :strike-through t)
-     (vertico-multiline                      :foreground base04)
+  (setf (alist-get 'base16-tomorrow my/theme-patches)
+        (lambda ()
+          (base16-theme-set-faces
+           'base16-tomorrow base16-tomorrow-theme-colors
+           ;; pale blue current-line tint (90% base00 / 10% base0D) -- lighter than
+           ;; base01 so it still contrasts against pale syntax colors (base0A yellow
+           ;; is the worst case: base01 background drops contrast below even the
+           ;; unhighlighted base00 baseline, this stays close to that baseline)
+           '((lin-blue                                :foreground unspecified :underline nil :extend t :background "#ecf1f7")
+             (vertico-current                        :inherit highlight)
+             (vertico-group-title                    :foreground base03 :weight bold)
+             (vertico-group-separator                :foreground base03 :strike-through t)
+             (vertico-multiline                      :foreground base04)
 
-     (consult-preview-line                   :inherit highlight)
-     (consult-highlight-match                :foreground base0A :weight bold)
-     (consult-async-running                  :foreground base0B)
-     (consult-async-failed                   :foreground base08)
-     (consult-async-finished                 :foreground base04)
-     (consult-file                           :foreground base0D)
-     (consult-key                            :foreground base0E)
+             (consult-preview-line                   :inherit highlight)
+             (consult-highlight-match                :foreground base0A :weight bold)
+             (consult-async-running                  :foreground base0B)
+             (consult-async-failed                   :foreground base08)
+             (consult-async-finished                 :foreground base04)
+             (consult-file                           :foreground base0D)
+             (consult-key                            :foreground base0E)
 
-     (embark-keybinding                      :foreground base0E)
-     (embark-target                          :inherit highlight)
-     (embark-selected                        :background base02)
+             (embark-keybinding                      :foreground base0E)
+             (embark-target                          :inherit highlight)
+             (embark-selected                        :background base02)
 
-     (marginalia-key                         :foreground base0E)
-     (marginalia-documentation               :foreground base04 :slant italic)
-     (marginalia-file-name                   :foreground base05)
-     (marginalia-size                        :foreground base09)
-     (marginalia-date                        :foreground base0C)
-     (marginalia-modified                    :foreground base09)
-     (marginalia-file-priv-dir               :foreground base0D)
-     (marginalia-file-priv-exec              :foreground base0B)
+             (marginalia-key                         :foreground base0E)
+             (marginalia-documentation               :foreground base04 :slant italic)
+             (marginalia-file-name                   :foreground base05)
+             (marginalia-size                        :foreground base09)
+             (marginalia-date                        :foreground base0C)
+             (marginalia-modified                    :foreground base09)
+             (marginalia-file-priv-dir               :foreground base0D)
+             (marginalia-file-priv-exec              :foreground base0B)
 
-     (which-key-key-face                     :foreground base0E :weight bold)
-     (which-key-command-description-face     :foreground base05)
-     (which-key-group-description-face       :foreground base0D)
-     (which-key-local-map-description-face   :foreground base0A)
-     (which-key-separator-face               :foreground base03)
-     (which-key-note-face                    :foreground base04)
-     (which-key-special-key-face             :foreground base08 :weight bold)
-     (which-key-docstring-face               :foreground base04 :slant italic)
+             (which-key-key-face                     :foreground base0E :weight bold)
+             (which-key-command-description-face     :foreground base05)
+             (which-key-group-description-face       :foreground base0D)
+             (which-key-local-map-description-face   :foreground base0A)
+             (which-key-separator-face               :foreground base03)
+             (which-key-note-face                    :foreground base04)
+             (which-key-special-key-face             :foreground base08 :weight bold)
+             (which-key-docstring-face               :foreground base04 :slant italic)
 
-     (treemacs-root-face                     :foreground base0D :weight bold)
-     (treemacs-directory-face                :foreground base05)
-     (treemacs-file-face                     :foreground base05)
-     (treemacs-git-modified-face             :foreground base0A)
-     (treemacs-git-added-face                :foreground base0B)
-     (treemacs-git-renamed-face              :foreground base0C)
-     (treemacs-git-ignored-face              :foreground base03)
-     (treemacs-git-untracked-face            :foreground base09)
-     (treemacs-git-conflict-face             :foreground base08 :weight bold)
-     (treemacs-tags-face                     :foreground base0C)
-     (treemacs-hl-line-face                  :inherit highlight)
-     (treemacs-fringe-indicator-face         :foreground base0D)
+             (treemacs-root-face                     :foreground base0D :weight bold)
+             (treemacs-directory-face                :foreground base05)
+             (treemacs-file-face                     :foreground base05)
+             (treemacs-git-modified-face             :foreground base0A)
+             (treemacs-git-added-face                :foreground base0B)
+             (treemacs-git-renamed-face              :foreground base0C)
+             (treemacs-git-ignored-face              :foreground base03)
+             (treemacs-git-untracked-face            :foreground base09)
+             (treemacs-git-conflict-face             :foreground base08 :weight bold)
+             (treemacs-tags-face                     :foreground base0C)
+             (treemacs-hl-line-face                  :inherit highlight)
+             (treemacs-fringe-indicator-face         :foreground base0D)
 
-     (mc/cursor-face                         :inverse-video t)
-     (mc/region-face                         :inherit region)
-     (mc/cursor-bar-face                     :background base0D :foreground base00)
+             (mc/cursor-face                         :inverse-video t)
+             (mc/region-face                         :inherit region)
+             (mc/cursor-bar-face                     :background base0D :foreground base00)
 
-     (wgrep-face                             :foreground base0B :weight bold)
-     (wgrep-file-face                        :foreground base0D)
-     (wgrep-done-face                        :foreground base0C)
-     (wgrep-delete-face                      :foreground base08 :strike-through t)
-     (wgrep-reject-face                      :foreground base08 :weight bold)
+             (wgrep-face                             :foreground base0B :weight bold)
+             (wgrep-file-face                        :foreground base0D)
+             (wgrep-done-face                        :foreground base0C)
+             (wgrep-delete-face                      :foreground base08 :strike-through t)
+             (wgrep-reject-face                      :foreground base08 :weight bold)
 
-     (git-timemachine-minibuffer-author-face :foreground base0B)
-     (git-timemachine-minibuffer-detail-face :foreground base09)
+             (git-timemachine-minibuffer-author-face :foreground base0B)
+             (git-timemachine-minibuffer-detail-face :foreground base09)
 
-     (font-lock-variable-use-face            :inherit font-lock-variable-name-face)
-     (font-lock-function-call-face           :inherit font-lock-function-name-face)
-     (font-lock-property-name-face           :inherit font-lock-variable-name-face)
-     (font-lock-property-use-face            :inherit font-lock-property-name-face)
-     (font-lock-operator-face                :inherit font-lock-keyword-face)
-     (font-lock-number-face                  :inherit font-lock-constant-face)
-     (font-lock-escape-face                  :foreground base0C)
-     (font-lock-bracket-face                 :foreground base05)
-     (font-lock-delimiter-face               :foreground base05)
-     (font-lock-misc-punctuation-face        :foreground base05)))
+             (font-lock-variable-use-face            :inherit font-lock-variable-name-face)
+             (font-lock-function-call-face           :inherit font-lock-function-name-face)
+             (font-lock-property-name-face           :inherit font-lock-variable-name-face)
+             (font-lock-property-use-face            :inherit font-lock-property-name-face)
+             (font-lock-operator-face                :inherit font-lock-keyword-face)
+             (font-lock-number-face                  :inherit font-lock-constant-face)
+             (font-lock-escape-face                  :foreground base0C)
+             (font-lock-bracket-face                 :foreground base05)
+             (font-lock-delimiter-face               :foreground base05)
+             (font-lock-misc-punctuation-face        :foreground base05)))))
   (load-theme (or (my/theme-saved) (caar my/themes)) t))
 
 ;; show all of the completions from the keys entered so far
