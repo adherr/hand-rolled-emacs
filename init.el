@@ -1283,6 +1283,38 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 
 ;;;;;;;; General
 
+(defun +git-linked-worktree (dir)
+  "Return (WORKTREE-ROOT . MAIN-ROOT) if DIR is in a linked git worktree."
+  (when-let* ((wt (locate-dominating-file dir ".git"))
+              (dotgit (expand-file-name ".git" wt))
+              ((file-regular-p dotgit))
+              (main (with-temp-buffer
+                      (insert-file-contents dotgit)
+                      (and (re-search-forward "^gitdir: \\(.*\\)/\\.git/worktrees/" nil t)
+                           (match-string 1)))))
+    (cons (file-name-as-directory (expand-file-name wt))
+          (file-name-as-directory main))))
+
+;; For agents: a worktree-removal skill should eval (+worktree-teardown "<abs path>") via
+;; mcp__ide__executeCode BEFORE deleting the worktree (servers need their files to shut down);
+;; if it returns a non-empty list, stop and report those buffers (unsaved edits) instead of deleting.
+;; Never kill buffers or call lsp shutdown directly from the skill: a modified buffer prompts and hangs the call.
+(defun +worktree-teardown (dir)
+  "Shut down LSP servers rooted under DIR and kill its buffers.
+Returns the names of modified buffers left alive."
+  (let ((dir (file-name-as-directory (expand-file-name dir)))
+        skipped)
+    (when (fboundp 'lsp-session)
+      (dolist (ws (lsp--session-workspaces (lsp-session)))
+        (when (file-in-directory-p (lsp--workspace-root ws) dir)
+          (with-lsp-workspace ws (lsp--shutdown-workspace)))))
+    (dolist (buf (buffer-list))
+      (when (file-in-directory-p (buffer-local-value 'default-directory buf) dir)
+        (if (and (buffer-file-name buf) (buffer-modified-p buf))
+            (push (buffer-name buf) skipped)
+          (kill-buffer buf))))
+    skipped))
+
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :init
@@ -1316,6 +1348,19 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   ;;                   :server-id 'my-rubocop-ls))
   ;; (add-to-list 'lsp-language-id-configuration '(yaml-ts-mode . "yaml"))
   (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]tmp\\'")
+
+  ;; reuse the main checkout's import choice for linked worktrees instead of prompting
+  (define-advice lsp--calculate-root (:around (orig session file) worktree)
+    (if-let* (((not (seq-some (lambda (dir) (lsp-f-ancestor-of? dir file))
+                               (lsp-session-folders-blocklist session))))
+              (pair (+git-linked-worktree (file-name-directory file))))
+        (pcase-let* ((`(,wt . ,main) pair)
+                     (mirror (expand-file-name (file-relative-name file wt) main))
+                     (main-folder (lsp-find-session-folder session mirror)))
+          (if (and main-folder (file-in-directory-p main-folder main))
+              (expand-file-name (file-relative-name main-folder main) wt)
+            wt))
+      (funcall orig session file)))
   :custom
   (lsp-completion-provider :none) ;; corfu
   (lsp-signature-auto-activate nil) ;; this momentarily steals focus and triggers auto-save that runs rubocop because of rubocopfmt-mode
