@@ -49,6 +49,9 @@
   :config
   (dolist (var '("LANG" "LC_CTYPE" "LIBRARY_PATH" "LSP_USE_PLISTS" "SSH_AUTH_SOCK" "CLAUDE_CODE_TMPDIR"))
     (add-to-list 'exec-path-from-shell-variables var))
+  ;; untracked per-machine overlays (e.g. client env vars to import)
+  (dolist (f (file-expand-wildcards (expand-file-name "emacs-local/*.el" (or (getenv "XDG_CONFIG_HOME") "~/.config"))))
+    (load f nil t))
   (exec-path-from-shell-initialize)
   ;; mise activate resolves versions per-shell-cd, which exec-path-from-shell
   ;; can't replicate (it captures PATH once at startup); mise's shims dir
