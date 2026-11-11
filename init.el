@@ -465,10 +465,45 @@
    ("C-M-SPC" . sp-mark-sexp)))
 
 ;; love me some zenburn theme
-;; (use-package zenburn-theme
-;;  :straight (:host github :repo "bbatsov/zenburn-emacs")
-;;  :config
-;;  (load-theme 'zenburn t))
+(use-package zenburn-theme
+  :straight (:host github :repo "bbatsov/zenburn-emacs")
+  :defer t)
+
+(defvar my/themes '((base16-tomorrow . "Tomorrow") (zenburn . "Zenburn"))
+  "Emacs themes `my/theme-toggle' cycles through, each paired with its Ghostty theme.")
+
+(defvar my/theme-ghostty-file
+  (expand-file-name "ghostty/theme.ghostty" (or (getenv "XDG_STATE_HOME") "~/.local/state"))
+  "Included by the Ghostty config; also how the chosen theme survives an Emacs restart.")
+
+;; load-theme stacks on whatever's already enabled, leaking the old theme's faces
+(advice-add 'load-theme :before
+            (lambda (_theme &optional _no-confirm no-enable)
+              (unless no-enable
+                (mapc #'disable-theme custom-enabled-themes))))
+
+(defun my/theme-saved ()
+  (when (file-readable-p my/theme-ghostty-file)
+    (with-temp-buffer
+      (insert-file-contents my/theme-ghostty-file)
+      (when (re-search-forward "^theme = \\(.+\\)$" nil t)
+        (car (rassoc (match-string 1) my/themes))))))
+
+(defun my/theme-set (theme)
+  "Load THEME in Emacs and switch Ghostty to its pair."
+  (interactive (list (intern (completing-read "Theme: " (mapcar #'car my/themes) nil t))))
+  (load-theme theme t)
+  (make-directory (file-name-directory my/theme-ghostty-file) t)
+  (with-temp-file my/theme-ghostty-file
+    (insert (format "theme = %s\n" (alist-get theme my/themes))))
+  ;; SIGUSR2 makes Ghostty reload its config
+  (call-process "pkill" nil 0 nil "-USR2" "-x" "ghostty"))
+
+(defun my/theme-toggle ()
+  (interactive)
+  (let* ((names (mapcar #'car my/themes))
+         (current (seq-find (lambda (n) (memq n custom-enabled-themes)) names)))
+    (my/theme-set (or (cadr (memq current names)) (car names)))))
 
 ;; Try it out to be like jxpx777
 (use-package base16-theme
@@ -485,7 +520,8 @@
   (setq base16-theme-256-color-source 'colors)
   (setq base16-highlight-mode-line 'contrast)
   (global-hl-line-mode -1) ;; line highlight doesn't play nice with text colors: hl-line-overlay-priority is -50, so font-lock foreground always wins and no background can contrast with every syntax color
-  (load-theme 'base16-tomorrow t)
+  ;; load without enabling so the patch below can attach; my/theme-saved picks what's enabled
+  (load-theme 'base16-tomorrow t t)
   ;; base16-theme.el (as of the current build) doesn't theme these packages, or
   ;; the Emacs 29+ font-lock-* faces tree-sitter modes use. Patched in using the
   ;; theme's own base16-theme-set-faces helper + base16-tomorrow-theme-colors,
@@ -567,7 +603,8 @@
      (font-lock-escape-face                  :foreground base0C)
      (font-lock-bracket-face                 :foreground base05)
      (font-lock-delimiter-face               :foreground base05)
-     (font-lock-misc-punctuation-face        :foreground base05))))
+     (font-lock-misc-punctuation-face        :foreground base05)))
+  (load-theme (or (my/theme-saved) (caar my/themes)) t))
 
 ;; show all of the completions from the keys entered so far
 (use-package which-key
@@ -1176,6 +1213,13 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (dimmer-configure-magit)
   (dimmer-configure-org)
   (add-to-list 'dimmer-buffer-exclusion-regexps "^ \\*Embark Actions\\*$")
+  ;; dimmed colors are cached per face; flush them or the old theme's palette lingers
+  (add-hook 'enable-theme-functions
+            (lambda (_theme)
+              (when dimmer-mode
+                (dimmer-restore-all)
+                (clrhash dimmer-dimmed-faces)
+                (dimmer-process-all t))))
   (dimmer-mode 1))
 
 ;; full angry-fruit-salad mode. Maybe I should try prism again, as I'm not sure this is valuable enough to add this much chaos

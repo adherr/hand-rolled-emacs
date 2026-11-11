@@ -100,5 +100,6 @@
  ("yaml-mode" . "93dba98c050e9abfc623ec66aa499dbbb46b2fe1")
  ("yasnippet" . "c1e6ff23e9af16b856c88dfaab9d3ad7b746ad37")
  ("yasnippet-snippets" . "606ee926df6839243098de6d71332a697518cb86")
+ ("zenburn-emacs" . "5b251bb01aa1d64055a50ea68ea4f4c060336705")
  ("zop-to-char" . "09885546aa2ee8b78953f54fd14f23f834cf2dfd"))
 :epsilon
