@@ -70,12 +70,18 @@
 	;; ./configure --prefix="$PWD/nextstep/Emacs.app/Contents/MacOS"
 	;; Append to path to give priority to values from exec-path-from-shell-initialize.
 	(add-to-list 'exec-path (concat invocation-directory (file-name-as-directory "bin")) t)
-	(setenv "LIBRARY_PATH" (concat (getenv "LIBRARY_PATH")
-				       (when (getenv "LIBRARY_PATH")
-					 ":")
-				       ;; This is where Homebrew puts libgccjit libraries.
-				       (car (file-expand-wildcards
-					     (expand-file-name "/opt/homebrew/opt/libgccjit/lib/gcc/*")))))
+	;; Homebrew's gcc/libgccjit libraries, under either prefix (Apple silicon or Intel).
+	(setenv "LIBRARY_PATH"
+		(mapconcat #'identity
+			   (delq nil (cons (getenv "LIBRARY_PATH")
+					   (mapcar (lambda (glob) (car (file-expand-wildcards glob)))
+						   '("/opt/homebrew/opt/gcc/lib/gcc/current"
+						     "/opt/homebrew/opt/libgccjit/lib/gcc/current"
+						     "/opt/homebrew/opt/gcc/lib/gcc/current/gcc/*/*"
+						     "/usr/local/opt/gcc/lib/gcc/current"
+						     "/usr/local/opt/libgccjit/lib/gcc/current"
+						     "/usr/local/opt/gcc/lib/gcc/current/gcc/*/*"))))
+			   ":"))
 	;; Only set after LIBRARY_PATH can find gcc libraries.
 	(setq comp-deferred-compilation t)
 	(setq comp-speed 3))
